@@ -6,7 +6,13 @@ import { GENRES } from "@/lib/genres";
 
 const RATINGS = ["G", "PG", "R"] as const;
 
-export default function ConfigHub({ usageToday }: { usageToday: number }) {
+export default function ConfigHub({
+  storiesToday,
+  storyLimit,
+}: {
+  storiesToday: number;
+  storyLimit: number;
+}) {
   const router = useRouter();
   const [genre, setGenre] = useState(GENRES[0].id);
   const [rating, setRating] = useState<"G" | "PG" | "R">("PG");
@@ -14,6 +20,8 @@ export default function ConfigHub({ usageToday }: { usageToday: number }) {
   const [seed, setSeed] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const atLimit = storiesToday >= storyLimit;
 
   async function startStory(useRandom: boolean) {
     setLoading(true);
@@ -56,13 +64,24 @@ export default function ConfigHub({ usageToday }: { usageToday: number }) {
       <div className="flex items-center justify-between gap-4 mb-2">
         <h1 className="font-display text-4xl">Build your canvas.</h1>
         <span
-          className="font-mech text-xs text-muted whitespace-nowrap"
-          title="Free-tier AI requests used today, across all stories. Resets at midnight Pacific time."
+          className={`font-mech text-xs whitespace-nowrap ${atLimit ? "text-rust" : "text-muted"}`}
+          title="New stories started today. Resets at midnight."
         >
-          {usageToday} requests today
+          {storiesToday}/{storyLimit} stories today
         </span>
       </div>
       <div className="mb-10" />
+
+      {atLimit && (
+        <div className="bg-surface2 text-ink text-sm rounded px-4 py-3 mb-6">
+          You've reached today's limit of {storyLimit} new stories. This keeps things fair while we're on the free
+          tier — come back tomorrow, or finish any stories already in progress from the{" "}
+          <a href="/vault" className="underline">
+            Chronicle Vault
+          </a>
+          .
+        </div>
+      )}
 
       <section className="mb-8">
         <h2 className="font-mech text-xs uppercase tracking-wide text-muted mb-3">Genre</h2>
@@ -134,14 +153,14 @@ export default function ConfigHub({ usageToday }: { usageToday: number }) {
       <div className="flex gap-3">
         <button
           onClick={() => startStory(false)}
-          disabled={loading || !seed.trim()}
+          disabled={loading || atLimit || !seed.trim()}
           className="bg-brass text-ink font-medium rounded px-5 py-2.5 hover:opacity-90 disabled:opacity-40"
         >
           {loading ? "Generating…" : "Begin with this opening"}
         </button>
         <button
           onClick={() => startStory(true)}
-          disabled={loading}
+          disabled={loading || atLimit}
           className="border border-steel text-steel font-medium rounded px-5 py-2.5 hover:bg-surface2 disabled:opacity-40"
         >
           {loading ? "Generating…" : "Random (Insta-Start)"}

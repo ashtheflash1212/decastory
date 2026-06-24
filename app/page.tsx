@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { DAILY_STORY_LIMIT } from "@/lib/limits";
 import ConfigHub from "@/components/ConfigHub";
 import TopNav from "@/components/TopNav";
 
@@ -9,24 +9,21 @@ export default async function HomePage() {
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect("/login");
 
-  let usageToday = 0;
-  try {
-    const admin = createAdminClient();
-    const today = new Date().toISOString().slice(0, 10);
-    const { data: usage } = await admin
-      .from("api_usage_daily")
-      .select("request_count")
-      .eq("usage_date", today)
-      .maybeSingle();
-    usageToday = usage?.request_count ?? 0;
-  } catch {
-    // non-critical — homepage still works without this number
-  }
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const { count } = await supabase
+    .from("stories")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", data.user.id)
+    .gte("created_at", todayStart.toISOString());
+
+  const storiesToday = count ?? 0;
 
   return (
     <main className="min-h-screen">
       <TopNav email={data.user.email ?? ""} />
-      <ConfigHub usageToday={usageToday} />
+      <ConfigHub storiesToday={storiesToday} storyLimit={DAILY_STORY_LIMIT} />
     </main>
   );
 }

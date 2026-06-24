@@ -1,11 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { DAILY_STORY_LIMIT } from "@/lib/limits";
 
 export async function POST(req: NextRequest) {
   const supabase = createClient();
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) {
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  }
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const { count } = await supabase
+    .from("stories")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userData.user.id)
+    .gte("created_at", todayStart.toISOString());
+
+  if ((count ?? 0) >= DAILY_STORY_LIMIT) {
+    return NextResponse.json(
+      { error: `You've reached today's limit of ${DAILY_STORY_LIMIT} new stories. Try again tomorrow.` },
+      { status: 429 }
+    );
   }
 
   const body = await req.json();
