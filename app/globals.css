@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --tick: #C9DED5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.gauge-tick {
+  background: var(--tick);
+}
+
+.gauge-tick--passed {
+  background: theme("colors.brass");
+}
+
+.gauge-tick--boundary {
+  background: theme("colors.rust");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

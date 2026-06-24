@@ -1,0 +1,150 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getAIProvider } from "@/lib/ai/provider";
+import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompts";
+import { applyChoiceToKarma, computePhase, isFinalSlide, maybeForceStatCheck, withGenreAxisDefault } from "@/lib/ai/pacing";
+import { Choice, KarmaVector, SlideRecord } from "@/lib/types";
+
+// Max AI-generated slides per user per day. Keeps one enthusiastic
+// user from exhausting the shared free Gemini quota for everyone
+// else. ~50 covers roughly 5-10 full stories/day — generous for
+// real use, but bounded. Override via env if you want a different cap.
+const DAILY_USER_LIMIT = Number(process.env.DAILY_USER_REQUEST_LIMIT ?? 50);
+
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const supabase = createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) {
+    return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  }
+
+  const admin = createAdminClient();
+
+  // Check the per-user cap BEFORE spending a Gemini call — if
+  // they're already at the limit, fail fast and don't burn quota.
+  try {
+    const { data: usedToday } = await admin.rpc("get_user_daily_usage", {
+      p_user_id: userData.user.id,
+    });
+    if ((usedToday ?? 0) >= DAILY_USER_LIMIT) {
+      return NextResponse.json(
+        {
+          error: `You've reached today's limit of ${DAILY_USER_LIMIT} story slides. This keeps the shared free AI tier available for everyone — resets at midnight Pacific.`,
+        },
+        { status: 429 }
+      );
+    }
+  } catch {
+    // If the usage check itself fails, don't block the user over it —
+    // fail open rather than breaking the app over a tracking bug.
+  }
+
+  const { chosen_choice_id } = await req.json().catch(() => ({ chosen_choice_id: null }));
+
+  const { data: story, error: storyErr } = await supabase
+    .from("stories")
+    .select("*")
+    .eq("id", params.id)
+    .eq("user_id", userData.user.id)
+    .single();
+
+  if (storyErr || !story) {
+    return NextResponse.json({ error: "Story not found." }, { status: 404 });
+  }
+  if (story.status !== "in_progress") {
+    return NextResponse.json({ error: "This story has already ended." }, { status: 400 });
+  }
+
+  const { data: history } = await supabase
+    .from("slides")
+    .select("*")
+    .eq("story_id", story.id)
+    .order("slide_number", { ascending: true });
+
+  const slides = (history ?? []) as SlideRecord[];
+  const lastSlide = slides[slides.length - 1] ?? null;
+
+  let karma: KarmaVector = withGenreAxisDefault(story.karma_vector);
+  let lastChoiceText: string | null = null;
+
+  // Resolve the previous slide's choice (skip on the very first call)
+  if (lastSlide && chosen_choice_id) {
+    const choice = (lastSlide.choices as Choice[]).find((c) => c.id === chosen_choice_id);
+    if (!choice) {
+      return NextResponse.json({ error: "Invalid choice id." }, { status: 400 });
+    }
+    karma = applyChoiceToKarma(karma, choice.mechanic_cost);
+    lastChoiceText = choice.text;
+
+    await supabase.from("slides").update({ chosen_choice_id }).eq("id", lastSlide.id);
+  }
+
+  const nextSlideNumber = (lastSlide?.slide_number ?? 0) + 1;
+  const phase = computePhase(nextSlideNumber, story.slide_budget);
+  const forcedStatCheck = maybeForceStatCheck(karma, nextSlideNumber, story.slide_budget);
+
+  const systemPrompt = buildSystemPrompt(story.genre, story.maturity_rating, story.slide_budget);
+  const userPrompt = buildUserPrompt({
+    slideNumber: nextSlideNumber,
+    totalBudget: story.slide_budget,
+    phase,
+    karma,
+    history: slides,
+    lastChoiceText,
+    seedPrompt: story.seed_prompt,
+    forcedStatCheck,
+  });
+
+  const ai = await getAIProvider();
+
+  let aiResponse;
+  try {
+    aiResponse = await ai.generateSlide({ systemPrompt, userPrompt });
+  } catch (err: any) {
+    const rateLimited = String(err.message).startsWith("RATE_LIMITED");
+    return NextResponse.json(
+      { error: rateLimited ? "The free AI tier hit its rate limit. Try again in a minute." : err.message },
+      { status: rateLimited ? 429 : 502 }
+    );
+  }
+
+  // Best-effort usage tracking — never let a counter failure block
+  // the actual story from generating.
+  try {
+    await admin.rpc("increment_daily_usage");
+    await admin.rpc("increment_user_daily_usage", { p_user_id: userData.user.id });
+  } catch {
+    // intentionally ignored
+  }
+
+  const isFinal = isFinalSlide(nextSlideNumber, story.slide_budget);
+  const choices: Choice[] = isFinal ? [] : aiResponse.choices.slice(0, 3); // hard cap at 3, schema rule #4
+
+  const { data: newSlide, error: slideErr } = await supabase
+    .from("slides")
+    .insert({
+      story_id: story.id,
+      slide_number: nextSlideNumber,
+      prose: aiResponse.prose,
+      choices,
+      narrative_phase: phase,
+      forced_stat_check: forcedStatCheck,
+    })
+    .select()
+    .single();
+
+  if (slideErr) {
+    return NextResponse.json({ error: slideErr.message }, { status: 500 });
+  }
+
+  const storyUpdate: Record<string, unknown> = { karma_vector: karma };
+  if (isFinal) {
+    storyUpdate.status = "completed";
+    storyUpdate.completed_at = new Date().toISOString();
+    if (aiResponse.story_title) storyUpdate.title = aiResponse.story_title;
+  }
+  await supabase.from("stories").update(storyUpdate).eq("id", story.id);
+
+  return NextResponse.json({ slide: newSlide, karma_vector: karma, is_final: isFinal });
+}
