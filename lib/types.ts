@@ -48,6 +48,9 @@ export interface StoryRecord {
   maturity_rating: MaturityRating;
   slide_budget: 5 | 10 | 20;
   prose_length: "concise" | "standard";
+  high_intensity: boolean;
+  powerups_remaining: number;
+  shield_active: boolean;
   status: "in_progress" | "completed" | "failed";
   karma_vector: KarmaVector;
   seed_prompt: string | null;

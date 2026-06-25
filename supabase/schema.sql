@@ -26,6 +26,9 @@ create table if not exists stories (
   share_token uuid not null default gen_random_uuid(),
   is_public boolean not null default false,
   is_favorite boolean not null default false,
+  high_intensity boolean not null default false,
+  powerups_remaining int not null default 0,
+  shield_active boolean not null default false,
   created_at timestamptz not null default now(),
   completed_at timestamptz
 );

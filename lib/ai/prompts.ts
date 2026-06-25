@@ -27,7 +27,8 @@ export function buildSystemPrompt(
   genreId: string,
   rating: MaturityRating,
   totalBudget: number,
-  proseLength: "concise" | "standard" = "standard"
+  proseLength: "concise" | "standard" = "standard",
+  highIntensity: boolean = false
 ): string {
   const genre = getGenre(genreId);
 
@@ -49,7 +50,9 @@ HARD RULES (never break these):
 10. You will be told the player's accumulated karma vector and, on some slides, a pre-computed stat check result. Narrate that result as fact — never contradict it or invent your own outcome.
 11. If the player's opening or choices mention a real, identifiable person — including public figures, content creators, or well-known usernames/handles you recognize — actively draw on what you know of their genuine public persona (their known personality, interests, sense of humor, catchphrases, public reputation) to make the story feel personalized and true to who they actually are. However: never present this as a literal factual account of that real person, and never write realistic invented dialogue and attribute it to them as if they actually said it in real life. The character should read as an affectionate, clearly fictionalized version built from their public persona — think fan-fiction tone, not biography.
 12. Use only plain ASCII punctuation — regular hyphens (-), straight quotes ("), and standard apostrophes ('). Do not use em-dashes, en-dashes, smart/curly quotes, or any other special punctuation characters.
-13. Respond ONLY with the JSON object matching the required schema. No prose outside the JSON, no markdown fences.`;
+13. The player may activate a power-up on some turns (you'll be told which, if any). AMPLIFY means their pick this turn is unusually decisive and committed — narrate it with extra weight. ALLY means a new helper character must appear in THIS slide for the first time, assisting in a way that fits the genre (a skilled partner for Action, an informant for Suspense, a magical companion for Fantasy, a trusted confidant for Romance). SHIELD has no visible narrative effect now — it's banked for later, ignore it unless told otherwise.
+${highIntensity ? `13b. This story's opening was intense enough that the conclusion is GUARANTEED to be dramatic and high-stakes — never let the RESOLUTION slide be quiet, anticlimactic, or gentle, regardless of how the middle of the story went. The ending must feel as intense as how it began.` : ""}
+14. Respond ONLY with the JSON object matching the required schema. No prose outside the JSON, no markdown fences.`;
 }
 
 interface HistoryItem {
@@ -68,9 +71,20 @@ export function buildUserPrompt(params: {
   seedPrompt: string | null;
   forcedStatCheck: { axis: string; threshold: number; passed: boolean } | null;
   died?: boolean;
+  powerup?: "amplify" | "ally" | "shield" | null;
 }): string {
-  const { slideNumber, totalBudget, phase, karma, history, lastChoiceText, seedPrompt, forcedStatCheck, died } =
-    params;
+  const {
+    slideNumber,
+    totalBudget,
+    phase,
+    karma,
+    history,
+    lastChoiceText,
+    seedPrompt,
+    forcedStatCheck,
+    died,
+    powerup,
+  } = params;
 
   const historyBlock = history.length
     ? history
@@ -90,12 +104,19 @@ export function buildUserPrompt(params: {
     ? `\nTHIS IS A DEATH ENDING. The player's sustained reckless/aggressive choices have led directly to their character's death. Narrate this as the resolution per system rule 9b.`
     : "";
 
+  const powerupBlock =
+    powerup === "amplify"
+      ? `\nThe player activated AMPLIFY on the choice they just made. Narrate it as unusually decisive per system rule 13.`
+      : powerup === "ally"
+      ? `\nThe player activated ALLY. Introduce a new helper character in THIS slide per system rule 13.`
+      : "";
+
   return `${PHASE_GUIDANCE[phase]}
 
 Progress: slide ${slideNumber} of ${totalBudget} (P = ${(slideNumber / totalBudget).toFixed(2)})
 Current karma vector: ${JSON.stringify(karma)}
 ${lastChoiceText ? `The player just chose: "${lastChoiceText}"` : ""}
-${checkBlock}${deathBlock}
+${checkBlock}${deathBlock}${powerupBlock}
 
 Story so far:
 ${historyBlock}

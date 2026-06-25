@@ -1,6 +1,30 @@
 import { KarmaAxis, KarmaVector, NarrativePhase } from "../types";
 
 /**
+ * FEATURE: Power-ups.
+ *
+ * Each story gets a small pool of uses (not per-type — one shared
+ * pool, player picks which type each time) based on length. They
+ * can only be activated before the story is 60% through — banked
+ * after that, but never usable past it. This keeps them a
+ * front-half tool, distinct from stat checks (which only fire in
+ * the climax window, P >= 0.8).
+ */
+const POWERUP_ALLOTMENT: Record<number, number> = {
+  5: 1,
+  10: 2,
+  20: 3,
+};
+
+export function getPowerupAllotment(totalBudget: number): number {
+  return POWERUP_ALLOTMENT[totalBudget] ?? 0;
+}
+
+export function canUsePowerupAt(slideNumber: number, totalBudget: number): boolean {
+  return slideNumber / totalBudget < 0.6;
+}
+
+/**
  * FEATURE 1: Deterministic Narrative Compression Algorithm
  *
  * The PRD specifies P = C / N driving phase changes, but never

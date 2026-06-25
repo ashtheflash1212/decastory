@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { KarmaVector, SlideRecord, StoryRecord } from "@/lib/types";
+import { canUsePowerupAt } from "@/lib/ai/pacing";
+import { getGenre } from "@/lib/genres";
 import ProgressRibbon from "./ProgressRibbon";
 import ChoiceCard from "./ChoiceCard";
+import PowerupBar, { PowerupType } from "./PowerupBar";
 
 const COOLDOWN_SECONDS = 4;
 
@@ -21,6 +24,7 @@ export default function StoryCanvas({
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [armedPowerup, setArmedPowerup] = useState<PowerupType | null>(null);
 
   // Counts down once a second while > 0. This is what actually
   // prevents the rapid-fire clicking that trips Gemini's per-minute
@@ -43,7 +47,7 @@ export default function StoryCanvas({
       const res = await fetch(`/api/stories/${story.id}/slide`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chosen_choice_id: choiceId }),
+        body: JSON.stringify({ chosen_choice_id: choiceId, powerup: armedPowerup }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -56,7 +60,10 @@ export default function StoryCanvas({
         ...prev,
         karma_vector: data.karma_vector as KarmaVector,
         status: data.is_final ? (data.died ? "failed" : "completed") : prev.status,
+        powerups_remaining: data.powerups_remaining ?? prev.powerups_remaining,
+        shield_active: data.shield_active ?? prev.shield_active,
       }));
+      setArmedPowerup(null);
     } catch (e: any) {
       setError(e.message ?? "The story engine stumbled. Try again.");
     } finally {
@@ -97,6 +104,13 @@ export default function StoryCanvas({
 
         {!isComplete && (
           <div className="mt-8 space-y-3">
+            <PowerupBar
+              remaining={story.powerups_remaining}
+              canUse={canUsePowerupAt(Math.max(currentSlide.slide_number, 1), story.slide_budget)}
+              armed={armedPowerup}
+              onArm={setArmedPowerup}
+              genreAxisLabel={getGenre(story.genre).axisLabel}
+            />
             {currentSlide.choices.map((choice, i) => (
               <ChoiceCard
                 key={choice.id}

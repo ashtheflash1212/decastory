@@ -5,6 +5,7 @@ import { getAIProvider } from "@/lib/ai/provider";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompts";
 import {
   applyChoiceToKarma,
+  canUsePowerupAt,
   checkForDeath,
   computePhase,
   isFinalSlide,
@@ -14,6 +15,8 @@ import {
 import { Choice, KarmaVector, SlideRecord } from "@/lib/types";
 import { DAILY_SLIDE_LIMIT, getEasternDateString } from "@/lib/limits";
 import { getGenre } from "@/lib/genres";
+
+type PowerupType = "amplify" | "ally" | "shield";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -27,9 +30,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Check the per-user cap BEFORE spending a Gemini call — if
   // they're already at the limit, fail fast and don't burn quota.
-  // This is checked in slides, not stories, so it scales correctly
-  // with story length and applies equally to Timeline Split
-  // branches — there's no separate "new story" cap to work around.
   try {
     const { data: usedToday } = await admin.rpc("get_user_daily_usage", {
       p_user_id: userData.user.id,
@@ -44,11 +44,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       );
     }
   } catch {
-    // If the usage check itself fails, don't block the user over it —
-    // fail open rather than breaking the app over a tracking bug.
+    // fail open rather than breaking the app over a tracking bug
   }
 
-  const { chosen_choice_id } = await req.json().catch(() => ({ chosen_choice_id: null }));
+  const { chosen_choice_id, powerup }: { chosen_choice_id: string | null; powerup?: PowerupType | null } = await req
+    .json()
+    .catch(() => ({ chosen_choice_id: null, powerup: null }));
 
   const { data: story, error: storyErr } = await supabase
     .from("stories")
@@ -73,6 +74,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const slides = (history ?? []) as SlideRecord[];
   const lastSlide = slides[slides.length - 1] ?? null;
 
+  // Validate the requested power-up: must have uses left, and the
+  // CURRENT slide (the one the player is acting from) must be
+  // under the 60% mark. Frontend already gates this, but the
+  // server re-checks rather than trusting the client.
+  const currentSlideNumber = lastSlide?.slide_number ?? 0;
+  let powerupUsed: PowerupType | null = null;
+  if (powerup && ["amplify", "ally", "shield"].includes(powerup)) {
+    const canUse = story.powerups_remaining > 0 && canUsePowerupAt(Math.max(currentSlideNumber, 1), story.slide_budget);
+    if (canUse) powerupUsed = powerup;
+  }
+
   let karma: KarmaVector = withGenreAxisDefault(story.karma_vector);
   let lastChoiceText: string | null = null;
 
@@ -82,7 +94,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!choice) {
       return NextResponse.json({ error: "Invalid choice id." }, { status: 400 });
     }
-    karma = applyChoiceToKarma(karma, choice.mechanic_cost);
+
+    // AMPLIFY doubles this turn's genre-axis impact specifically —
+    // a meaningful boost to the one stat that's most genre-flavored.
+    const cost = { ...choice.mechanic_cost };
+    if (powerupUsed === "amplify" && cost.genre_axis) {
+      cost.genre_axis = cost.genre_axis * 2;
+    }
+
+    karma = applyChoiceToKarma(karma, cost);
     lastChoiceText = choice.text;
 
     await supabase.from("slides").update({ chosen_choice_id }).eq("id", lastSlide.id);
@@ -90,9 +110,21 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const nextSlideNumber = (lastSlide?.slide_number ?? 0) + 1;
   const phase = computePhase(nextSlideNumber, story.slide_budget);
-  const forcedStatCheck = maybeForceStatCheck(karma, nextSlideNumber, story.slide_budget);
   const isFinal = isFinalSlide(nextSlideNumber, story.slide_budget);
   const died = isFinal && checkForDeath(karma, getGenre(story.genre).deathThreshold);
+
+  // SHIELD: if one was banked on an earlier turn, it silently
+  // guarantees the next stat check passes, then gets consumed.
+  // Activating a NEW shield this turn can never apply to a check
+  // firing this same turn — powerups only work before P<0.6, stat
+  // checks only fire at P>=0.8, so the windows never overlap.
+  const rawStatCheck = maybeForceStatCheck(karma, nextSlideNumber, story.slide_budget);
+  let forcedStatCheck = rawStatCheck;
+  let shieldConsumed = false;
+  if (rawStatCheck && story.shield_active) {
+    forcedStatCheck = { ...rawStatCheck, passed: true };
+    shieldConsumed = true;
+  }
 
   // Resolve which choice text was actually picked at each prior
   // slide, so the AI can callback to specific earlier decisions by
@@ -103,7 +135,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     chosen_text: s.choices?.find((c) => c.id === s.chosen_choice_id)?.text ?? null,
   }));
 
-  const systemPrompt = buildSystemPrompt(story.genre, story.maturity_rating, story.slide_budget, story.prose_length);
+  const systemPrompt = buildSystemPrompt(
+    story.genre,
+    story.maturity_rating,
+    story.slide_budget,
+    story.prose_length,
+    story.high_intensity
+  );
   const userPrompt = buildUserPrompt({
     slideNumber: nextSlideNumber,
     totalBudget: story.slide_budget,
@@ -114,6 +152,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     seedPrompt: story.seed_prompt,
     forcedStatCheck,
     died,
+    powerup: powerupUsed,
   });
 
   const ai = await getAIProvider();
@@ -157,7 +196,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: slideErr.message }, { status: 500 });
   }
 
-  const storyUpdate: Record<string, unknown> = { karma_vector: karma };
+  const newPowerupsRemaining = story.powerups_remaining - (powerupUsed ? 1 : 0);
+  const newShieldActive = shieldConsumed ? false : powerupUsed === "shield" ? true : story.shield_active;
+
+  const storyUpdate: Record<string, unknown> = {
+    karma_vector: karma,
+    powerups_remaining: newPowerupsRemaining,
+    shield_active: newShieldActive,
+  };
   if (isFinal) {
     storyUpdate.status = died ? "failed" : "completed";
     storyUpdate.completed_at = new Date().toISOString();
@@ -165,5 +211,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
   await supabase.from("stories").update(storyUpdate).eq("id", story.id);
 
-  return NextResponse.json({ slide: newSlide, karma_vector: karma, is_final: isFinal, died });
+  return NextResponse.json({
+    slide: newSlide,
+    karma_vector: karma,
+    is_final: isFinal,
+    died,
+    powerups_remaining: newPowerupsRemaining,
+    shield_active: newShieldActive,
+    powerup_used: powerupUsed,
+  });
 }
