@@ -15,6 +15,7 @@ type GuestSlide = {
   prose: string;
   choices: Choice[];
   narrative_phase: string;
+  chosen_text?: string | null;
 };
 
 export default function GuestPlay() {
@@ -22,6 +23,7 @@ export default function GuestPlay() {
   const [genre, setGenre] = useState(GENRES[0].id);
   const [rating, setRating] = useState<"G" | "PG" | "R">("PG");
   const [budget, setBudget] = useState<5 | 10>(5);
+  const [proseLength, setProseLength] = useState<"concise" | "standard">("standard");
   const [seed, setSeed] = useState("");
 
   const [slides, setSlides] = useState<GuestSlide[]>([]);
@@ -51,16 +53,20 @@ export default function GuestPlay() {
           genre,
           maturity_rating: rating,
           slide_budget: budget,
+          prose_length: proseLength,
           seed_prompt: seed.trim() || null,
           karma_vector: karma,
-          history: slides.map((s) => ({ slide_number: s.slide_number, prose: s.prose })),
+          history: slides.map((s) => ({ slide_number: s.slide_number, prose: s.prose, chosen_text: s.chosen_text })),
           last_choice: lastChoice,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      setSlides((prev) => [...prev, data.slide]);
+      setSlides((prev) => [
+        ...prev.map((s, i) => (i === prev.length - 1 ? { ...s, chosen_text: lastChoice?.text ?? null } : s)),
+        data.slide,
+      ]);
       setKarma(data.karma_vector);
       if (data.is_final) {
         setIsComplete(true);
@@ -157,6 +163,23 @@ export default function GuestPlay() {
                   }`}
                 >
                   {n} Slides
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="font-mech text-xs uppercase tracking-wide text-muted mb-3">Text Length</h2>
+            <div className="inline-flex rounded-lg border border-surface2 overflow-hidden">
+              {(["standard", "concise"] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setProseLength(p)}
+                  className={`px-5 py-2 font-mech text-sm capitalize ${
+                    proseLength === p ? "bg-brass text-ink" : "bg-surface text-ink hover:bg-surface2"
+                  }`}
+                >
+                  {p}
                 </button>
               ))}
             </div>

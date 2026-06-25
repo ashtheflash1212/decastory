@@ -84,13 +84,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const phase = computePhase(nextSlideNumber, story.slide_budget);
   const forcedStatCheck = maybeForceStatCheck(karma, nextSlideNumber, story.slide_budget);
 
-  const systemPrompt = buildSystemPrompt(story.genre, story.maturity_rating, story.slide_budget);
+  // Resolve which choice text was actually picked at each prior
+  // slide, so the AI can callback to specific earlier decisions by
+  // name (see prompts.ts rule 8b) instead of only seeing raw prose.
+  const historyForPrompt = slides.map((s) => ({
+    slide_number: s.slide_number,
+    prose: s.prose,
+    chosen_text: s.choices?.find((c) => c.id === s.chosen_choice_id)?.text ?? null,
+  }));
+
+  const systemPrompt = buildSystemPrompt(story.genre, story.maturity_rating, story.slide_budget, story.prose_length);
   const userPrompt = buildUserPrompt({
     slideNumber: nextSlideNumber,
     totalBudget: story.slide_budget,
     phase,
     karma,
-    history: slides,
+    history: historyForPrompt,
     lastChoiceText,
     seedPrompt: story.seed_prompt,
     forcedStatCheck,

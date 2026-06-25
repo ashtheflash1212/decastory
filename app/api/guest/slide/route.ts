@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
     genre,
     maturity_rating,
     slide_budget,
+    prose_length,
     seed_prompt,
     karma_vector,
     history,
@@ -34,11 +35,14 @@ export async function POST(req: NextRequest) {
     genre: string;
     maturity_rating: MaturityRating;
     slide_budget: 5 | 10;
+    prose_length?: "concise" | "standard";
     seed_prompt: string | null;
     karma_vector: KarmaVector;
-    history: { slide_number: number; prose: string }[];
+    history: { slide_number: number; prose: string; chosen_text?: string | null }[];
     last_choice: Choice | null;
   } = body;
+
+  const proseLength: "concise" | "standard" = prose_length === "concise" ? "concise" : "standard";
 
   if (!genre || !["G", "PG", "R"].includes(maturity_rating) || ![5, 10].includes(slide_budget)) {
     return NextResponse.json({ error: "Invalid story configuration." }, { status: 400 });
@@ -56,13 +60,13 @@ export async function POST(req: NextRequest) {
   const phase = computePhase(nextSlideNumber, slide_budget);
   const forcedStatCheck = maybeForceStatCheck(karma, nextSlideNumber, slide_budget);
 
-  const systemPrompt = buildSystemPrompt(genre, maturity_rating, slide_budget);
+  const systemPrompt = buildSystemPrompt(genre, maturity_rating, slide_budget, proseLength);
   const userPrompt = buildUserPrompt({
     slideNumber: nextSlideNumber,
     totalBudget: slide_budget,
     phase,
     karma,
-    history: priorSlides as any, // only slide_number/prose are read — full SlideRecord shape isn't needed here
+    history: priorSlides,
     lastChoiceText,
     seedPrompt: seed_prompt ?? null,
     forcedStatCheck,

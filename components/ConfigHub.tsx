@@ -17,6 +17,7 @@ export default function ConfigHub({
   const [genre, setGenre] = useState(GENRES[0].id);
   const [rating, setRating] = useState<"G" | "PG" | "R">("PG");
   const [budget, setBudget] = useState<5 | 10>(5);
+  const [proseLength, setProseLength] = useState<"concise" | "standard">("standard");
   const [seed, setSeed] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +36,7 @@ export default function ConfigHub({
           genre,
           maturity_rating: rating,
           slide_budget: budget,
+          prose_length: proseLength,
           seed_prompt: useRandom ? null : seed.trim() || null,
         }),
       });
@@ -135,6 +137,26 @@ export default function ConfigHub({
         </div>
         <p className="text-sm text-muted mt-1">
           {budget === 5 ? "Paced Flash Fiction" : "Standard Novella Arc"}
+        </p>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="font-mech text-xs uppercase tracking-wide text-muted mb-3">Text Length</h2>
+        <div className="inline-flex rounded-lg border border-surface2 overflow-hidden">
+          {(["standard", "concise"] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setProseLength(p)}
+              className={`px-5 py-2 font-mech text-sm capitalize ${
+                proseLength === p ? "bg-brass text-ink" : "bg-surface text-ink hover:bg-surface2"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+        <p className="text-sm text-muted mt-1">
+          {proseLength === "concise" ? "Shorter, punchier prose per slide" : "Fuller prose per slide"}
         </p>
       </section>
 

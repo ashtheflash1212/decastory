@@ -17,6 +17,7 @@ create table if not exists stories (
   genre text not null,
   maturity_rating text not null check (maturity_rating in ('G','PG','R')),
   slide_budget int not null check (slide_budget in (5,10)),
+  prose_length text not null default 'standard' check (prose_length in ('concise','standard')),
   status text not null default 'in_progress' check (status in ('in_progress','completed','failed')),
   karma_vector jsonb not null default '{"prudence":0,"force":0,"subtlety":0}'::jsonb,
   seed_prompt text,
