@@ -7,11 +7,11 @@ import { GENRES } from "@/lib/genres";
 const RATINGS = ["G", "PG", "R"] as const;
 
 export default function ConfigHub({
-  storiesToday,
-  storyLimit,
+  slidesToday,
+  slideLimit,
 }: {
-  storiesToday: number;
-  storyLimit: number;
+  slidesToday: number;
+  slideLimit: number;
 }) {
   const router = useRouter();
   const [genre, setGenre] = useState(GENRES[0].id);
@@ -22,7 +22,7 @@ export default function ConfigHub({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const atLimit = storiesToday >= storyLimit;
+  const atLimit = slidesToday >= slideLimit;
 
   async function startStory(useRandom: boolean) {
     setLoading(true);
@@ -67,17 +67,17 @@ export default function ConfigHub({
         <h1 className="font-display text-4xl">Build your canvas.</h1>
         <span
           className={`font-mech text-xs whitespace-nowrap ${atLimit ? "text-rust" : "text-muted"}`}
-          title="New stories started today. Resets at midnight."
+          title="AI-generated slides used today, across all stories. Resets at midnight Eastern."
         >
-          {storiesToday}/{storyLimit} stories today
+          {slidesToday}/{slideLimit} slides today
         </span>
       </div>
       <div className="mb-10" />
 
       {atLimit && (
         <div className="bg-surface2 text-ink text-sm rounded px-4 py-3 mb-6">
-          You've reached today's limit of {storyLimit} new stories. This keeps things fair while we're on the free
-          tier — come back tomorrow, or finish any stories already in progress from the{" "}
+          You've reached today's limit of {slideLimit} story slides. This keeps things fair while we're on the free
+          tier — come back tomorrow, or revisit any stories already in progress from the{" "}
           <a href="/vault" className="underline">
             Chronicle Vault
           </a>

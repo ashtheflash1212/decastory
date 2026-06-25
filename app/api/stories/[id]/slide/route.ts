@@ -5,12 +5,7 @@ import { getAIProvider } from "@/lib/ai/provider";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompts";
 import { applyChoiceToKarma, computePhase, isFinalSlide, maybeForceStatCheck, withGenreAxisDefault } from "@/lib/ai/pacing";
 import { Choice, KarmaVector, SlideRecord } from "@/lib/types";
-
-// Max AI-generated slides per user per day. Keeps one enthusiastic
-// user from exhausting the shared free Gemini quota for everyone
-// else. ~50 covers roughly 5-10 full stories/day — generous for
-// real use, but bounded. Override via env if you want a different cap.
-const DAILY_USER_LIMIT = Number(process.env.DAILY_USER_REQUEST_LIMIT ?? 50);
+import { DAILY_SLIDE_LIMIT, getEasternDateString } from "@/lib/limits";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -20,17 +15,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   const admin = createAdminClient();
+  const today = getEasternDateString();
 
   // Check the per-user cap BEFORE spending a Gemini call — if
   // they're already at the limit, fail fast and don't burn quota.
+  // This is checked in slides, not stories, so it scales correctly
+  // with story length and applies equally to Timeline Split
+  // branches — there's no separate "new story" cap to work around.
   try {
     const { data: usedToday } = await admin.rpc("get_user_daily_usage", {
       p_user_id: userData.user.id,
+      p_date: today,
     });
-    if ((usedToday ?? 0) >= DAILY_USER_LIMIT) {
+    if ((usedToday ?? 0) >= DAILY_SLIDE_LIMIT) {
       return NextResponse.json(
         {
-          error: `You've reached today's limit of ${DAILY_USER_LIMIT} story slides. This keeps the shared free AI tier available for everyone — resets at midnight Pacific.`,
+          error: `You've reached today's limit of ${DAILY_SLIDE_LIMIT} story slides. This keeps the shared free AI tier available for everyone — resets at midnight Eastern.`,
         },
         { status: 429 }
       );
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // the actual story from generating.
   try {
     await admin.rpc("increment_daily_usage");
-    await admin.rpc("increment_user_daily_usage", { p_user_id: userData.user.id });
+    await admin.rpc("increment_user_daily_usage", { p_user_id: userData.user.id, p_date: today });
   } catch {
     // intentionally ignored
   }

@@ -227,6 +227,7 @@ export default function GuestPlay() {
                     choice={choice}
                     index={i}
                     genre={genre}
+                    phase={currentSlide.narrative_phase}
                     onSelect={() => requestSlide(choice)}
                     disabled={isBusy}
                   />

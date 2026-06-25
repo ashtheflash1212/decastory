@@ -25,6 +25,7 @@ create table if not exists stories (
   branch_point_slide int,
   share_token uuid not null default gen_random_uuid(),
   is_public boolean not null default false,
+  is_favorite boolean not null default false,
   created_at timestamptz not null default now(),
   completed_at timestamptz
 );
@@ -149,7 +150,7 @@ create table if not exists user_usage_daily (
 
 alter table user_usage_daily enable row level security;
 
-create or replace function increment_user_daily_usage(p_user_id uuid)
+create or replace function increment_user_daily_usage(p_user_id uuid, p_date date default current_date)
 returns int
 language plpgsql
 security definer
@@ -158,20 +159,20 @@ declare
   new_count int;
 begin
   insert into user_usage_daily (user_id, usage_date, request_count)
-  values (p_user_id, current_date, 1)
+  values (p_user_id, p_date, 1)
   on conflict (user_id, usage_date) do update set request_count = user_usage_daily.request_count + 1
   returning request_count into new_count;
   return new_count;
 end;
 $$;
 
-create or replace function get_user_daily_usage(p_user_id uuid)
+create or replace function get_user_daily_usage(p_user_id uuid, p_date date default current_date)
 returns int
 language sql
 security definer
 as $$
   select coalesce(
-    (select request_count from user_usage_daily where user_id = p_user_id and usage_date = current_date),
+    (select request_count from user_usage_daily where user_id = p_user_id and usage_date = p_date),
     0
   );
 $$;

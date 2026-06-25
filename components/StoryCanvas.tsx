@@ -103,6 +103,7 @@ export default function StoryCanvas({
                 choice={choice}
                 index={i}
                 genre={story.genre}
+                phase={currentSlide.narrative_phase}
                 onSelect={() => pickChoice(choice.id)}
                 disabled={isBusy}
               />

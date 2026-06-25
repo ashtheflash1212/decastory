@@ -1,9 +1,8 @@
-// Max NEW stories a single user can start per day. Separate from
-// DAILY_USER_REQUEST_LIMIT (which caps total slide-generation calls,
-// including continuing existing stories) — this caps how many fresh
-// stories someone can kick off, which is the number players actually
-// think in terms of.
-export const DAILY_STORY_LIMIT = Number(process.env.DAILY_STORY_LIMIT ?? 7);
+// Max AI-generated slides a single user can request per day — this
+// is the real cost driver (every slide = one AI call), so it scales
+// correctly with story length and can't be bypassed by Timeline
+// Split branching the way a "stories created" cap could be.
+export const DAILY_SLIDE_LIMIT = Number(process.env.DAILY_SLIDE_LIMIT ?? 50);
 
 /**
  * Returns the most recent midnight in US Eastern Time, as a UTC
@@ -38,4 +37,22 @@ export function getEasternMidnightUTC(): Date {
   const utcHour = -offsetHours; // midnight ET in EDT (-4) = 04:00 UTC; in EST (-5) = 05:00 UTC
 
   return new Date(`${year}-${month}-${day}T${String(utcHour).padStart(2, "0")}:00:00.000Z`);
+}
+
+/**
+ * The current calendar date in US Eastern Time, as 'YYYY-MM-DD'.
+ * Used as the day-key for the slide-usage counter so it resets at
+ * Eastern midnight rather than whatever timezone the database
+ * server happens to default to.
+ */
+export function getEasternDateString(): string {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
 }

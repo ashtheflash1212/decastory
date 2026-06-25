@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import TopNav from "@/components/TopNav";
-import VaultCard from "@/components/VaultCard";
+import VaultGrid from "@/components/VaultGrid";
 
 export default async function VaultPage() {
   const supabase = createClient();
@@ -21,13 +21,11 @@ export default async function VaultPage() {
         <p className="font-mech text-xs uppercase tracking-[0.2em] text-cocoa mb-2">Chronicle Vault</p>
         <h1 className="font-display text-4xl mb-10">Your archive.</h1>
 
-        {(!stories || stories.length === 0) && (
+        {(!stories || stories.length === 0) ? (
           <p className="text-muted">No stories yet. Start one from the Configuration Hub.</p>
+        ) : (
+          <VaultGrid stories={stories as any} />
         )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {stories?.map((s: any) => <VaultCard key={s.id} story={s} />)}
-        </div>
       </div>
     </main>
   );

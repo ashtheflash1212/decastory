@@ -6,6 +6,8 @@ export const GENRES = [
     axisLabel: "Spectacle",
     flavorGuidance:
       "Lean into dramatic, cinematic surroundings — collapsing structures, vehicles, crowds, environmental hazards the player must move through or use.",
+    climaxBg: "#F1F1F1",
+    climaxBorder: "#B8B8B8",
   },
   {
     id: "suspense",
@@ -14,6 +16,8 @@ export const GENRES = [
     axisLabel: "Paranoia",
     flavorGuidance:
       "Lean into a creeping sense that something is being watched, followed, or hidden — ambiguous details, things half-glimpsed, reasons to distrust what seems safe.",
+    climaxBg: "#FBEAEA",
+    climaxBorder: "#E2A3A3",
   },
   {
     id: "fantasy",
@@ -22,6 +26,8 @@ export const GENRES = [
     axisLabel: "Magic",
     flavorGuidance:
       "Lean into magical creatures, enchanted objects, or supernatural forces with real rules and real costs — magic should feel consequential, not decorative.",
+    climaxBg: "#FBF3DF",
+    climaxBorder: "#DDBE74",
   },
   {
     id: "romance",
@@ -30,6 +36,8 @@ export const GENRES = [
     axisLabel: "Intimacy",
     flavorGuidance:
       "Lean into complex relationship dynamics — competing loyalties, unspoken feelings, trust being built or broken between characters.",
+    climaxBg: "#FBEAF1",
+    climaxBorder: "#E3A6C3",
   },
 ];
 

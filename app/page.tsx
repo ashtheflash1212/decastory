@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { DAILY_STORY_LIMIT, getEasternMidnightUTC } from "@/lib/limits";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { DAILY_SLIDE_LIMIT, getEasternDateString } from "@/lib/limits";
 import ConfigHub from "@/components/ConfigHub";
 import TopNav from "@/components/TopNav";
 
@@ -9,18 +10,22 @@ export default async function HomePage() {
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect("/login");
 
-  const { count } = await supabase
-    .from("stories")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", data.user.id)
-    .gte("created_at", getEasternMidnightUTC().toISOString());
-
-  const storiesToday = count ?? 0;
+  let slidesToday = 0;
+  try {
+    const admin = createAdminClient();
+    const { data: usage } = await admin.rpc("get_user_daily_usage", {
+      p_user_id: data.user.id,
+      p_date: getEasternDateString(),
+    });
+    slidesToday = usage ?? 0;
+  } catch {
+    // non-critical — homepage still works without this number
+  }
 
   return (
     <main className="min-h-screen">
       <TopNav email={data.user.email ?? ""} />
-      <ConfigHub storiesToday={storiesToday} storyLimit={DAILY_STORY_LIMIT} />
+      <ConfigHub slidesToday={slidesToday} slideLimit={DAILY_SLIDE_LIMIT} />
     </main>
   );
 }

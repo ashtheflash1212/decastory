@@ -30,6 +30,9 @@ export default function TopNav({ email }: { email: string }) {
           <Link href="/vault" className="hover:text-cocoa">
             Chronicle Vault
           </Link>
+          <Link href="/how-it-works" className="hover:text-cocoa">
+            How It Works?
+          </Link>
           <span className="text-muted">{email}</span>
           <button onClick={signOut} className="text-muted hover:text-rust">
             Sign out
@@ -49,6 +52,9 @@ export default function TopNav({ email }: { email: string }) {
         </Link>
         <Link href="/vault" className="hover:text-cocoa whitespace-nowrap">
           Chronicle Vault
+        </Link>
+        <Link href="/how-it-works" className="hover:text-cocoa whitespace-nowrap">
+          How It Works?
         </Link>
         <span className="text-muted text-xs truncate">{email}</span>
       </div>
