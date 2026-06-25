@@ -17,7 +17,7 @@ export default async function VaultPage() {
   return (
     <main className="min-h-screen">
       <TopNav email={userData.user.email ?? ""} />
-      <div className="max-w-3xl mx-auto px-6 py-12">
+      <div className="max-w-7xl mx-auto px-6 py-12">
         <p className="font-mech text-xs uppercase tracking-[0.2em] text-cocoa mb-2">Chronicle Vault</p>
         <h1 className="font-display text-4xl mb-10">Your archive.</h1>
 

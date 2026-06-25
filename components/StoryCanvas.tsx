@@ -33,7 +33,7 @@ export default function StoryCanvas({
   }, [cooldown]);
 
   const currentSlide = slides[slides.length - 1];
-  const isComplete = story.status === "completed";
+  const isComplete = story.status === "completed" || story.status === "failed";
   const isBusy = loading || cooldown > 0;
 
   async function pickChoice(choiceId: string) {
@@ -55,7 +55,7 @@ export default function StoryCanvas({
       setStory((prev) => ({
         ...prev,
         karma_vector: data.karma_vector as KarmaVector,
-        status: data.is_final ? "completed" : prev.status,
+        status: data.is_final ? (data.died ? "failed" : "completed") : prev.status,
       }));
     } catch (e: any) {
       setError(e.message ?? "The story engine stumbled. Try again.");
@@ -117,7 +117,13 @@ export default function StoryCanvas({
 
         {isComplete && (
           <div className="mt-8 border-t border-surface2 pt-6">
-            <p className="font-mech text-xs uppercase tracking-wide text-cocoa mb-3">Story Complete</p>
+            <p
+              className={`font-mech text-xs uppercase tracking-wide mb-3 ${
+                story.status === "failed" ? "text-rust" : "text-cocoa"
+              }`}
+            >
+              {story.status === "failed" ? "☠ You Died" : "Story Complete"}
+            </p>
             <p className="text-sm text-muted mb-4">
               {slides.length}/{story.slide_budget} slides survived.
             </p>

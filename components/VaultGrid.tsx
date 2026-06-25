@@ -14,13 +14,14 @@ type StoryForGrid = {
   slides?: { slide_number: number }[];
 };
 
-export default function VaultGrid({ stories }: { stories: StoryForGrid[] }) {
+export default function VaultGrid({ stories = [] }: { stories?: StoryForGrid[] }) {
   const [sortMode, setSortMode] = useState<"recent" | "favorites">("recent");
 
   const sorted = useMemo(() => {
-    if (sortMode === "recent") return stories;
+    const safe = stories ?? [];
+    if (sortMode === "recent") return safe;
     // Favorites first, each group keeping its original (recent) order.
-    return [...stories].sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite));
+    return [...safe].sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite));
   }, [stories, sortMode]);
 
   return (
@@ -39,11 +40,15 @@ export default function VaultGrid({ stories }: { stories: StoryForGrid[] }) {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {sorted.map((s) => (
-          <VaultCard key={s.id} story={s} />
-        ))}
-      </div>
+      {sorted.length === 0 ? (
+        <p className="text-muted">No stories to show.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {sorted.map((s) => (
+            <VaultCard key={s.id} story={s} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

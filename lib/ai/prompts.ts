@@ -45,6 +45,7 @@ HARD RULES (never break these):
 8. The next slide's prose MUST visibly and specifically pay off the cost of whichever choice the player picked, per rule 6 — not a generic continuation that could follow any of the three options. If they chose the safer/passive option, something consequential should now surface that happened while they weren't looking. If force, show a concrete cost to safety or standing. If honesty/talking, show a concrete relational complication. Make the chosen path's impact impossible to mistake for one of the other paths.
 8b. The "Story so far" section below shows exactly which choice the player made at each earlier slide. During the CLIMAX and RESOLUTION phases especially, explicitly call back to a SPECIFIC earlier choice or detail by name — not vaguely — to make clear the player's early decisions, not just their most recent one, shaped how this ends. Earlier choices should feel like they're still alive in the story, not forgotten the moment the next slide started.
 9. On the final slide, return an empty choices array and a story_title summarizing the journey in 3-6 words.
+9b. If you are told this final slide is a DEATH ending, the resolution MUST be the character's death, narrated concretely and fitting the genre and content rating — not a survival, not a last-second rescue. The story_title should reflect this (e.g. a title implying a fall, an ending, a cost paid), not a triumphant one.
 10. You will be told the player's accumulated karma vector and, on some slides, a pre-computed stat check result. Narrate that result as fact — never contradict it or invent your own outcome.
 11. If the player's opening or choices mention a real, identifiable person — including public figures, content creators, or well-known usernames/handles you recognize — actively draw on what you know of their genuine public persona (their known personality, interests, sense of humor, catchphrases, public reputation) to make the story feel personalized and true to who they actually are. However: never present this as a literal factual account of that real person, and never write realistic invented dialogue and attribute it to them as if they actually said it in real life. The character should read as an affectionate, clearly fictionalized version built from their public persona — think fan-fiction tone, not biography.
 12. Use only plain ASCII punctuation — regular hyphens (-), straight quotes ("), and standard apostrophes ('). Do not use em-dashes, en-dashes, smart/curly quotes, or any other special punctuation characters.
@@ -66,8 +67,10 @@ export function buildUserPrompt(params: {
   lastChoiceText: string | null;
   seedPrompt: string | null;
   forcedStatCheck: { axis: string; threshold: number; passed: boolean } | null;
+  died?: boolean;
 }): string {
-  const { slideNumber, totalBudget, phase, karma, history, lastChoiceText, seedPrompt, forcedStatCheck } = params;
+  const { slideNumber, totalBudget, phase, karma, history, lastChoiceText, seedPrompt, forcedStatCheck, died } =
+    params;
 
   const historyBlock = history.length
     ? history
@@ -83,12 +86,16 @@ export function buildUserPrompt(params: {
       } it. Narrate the consequence of this outcome concretely in the prose.`
     : "";
 
+  const deathBlock = died
+    ? `\nTHIS IS A DEATH ENDING. The player's sustained reckless/aggressive choices have led directly to their character's death. Narrate this as the resolution per system rule 9b.`
+    : "";
+
   return `${PHASE_GUIDANCE[phase]}
 
 Progress: slide ${slideNumber} of ${totalBudget} (P = ${(slideNumber / totalBudget).toFixed(2)})
 Current karma vector: ${JSON.stringify(karma)}
 ${lastChoiceText ? `The player just chose: "${lastChoiceText}"` : ""}
-${checkBlock}
+${checkBlock}${deathBlock}
 
 Story so far:
 ${historyBlock}

@@ -67,6 +67,22 @@ export function applyChoiceToKarma(karma: KarmaVector, cost: Partial<KarmaVector
 }
 
 /**
+ * FEATURE: Choice-driven death endings.
+ *
+ * Deliberately NOT a dice roll — death is a direct, explainable
+ * consequence of how aggressively/recklessly the player played
+ * (their accumulated Boldness/force karma), checked only on the
+ * very final slide. Each genre has its own threshold (set in
+ * lib/genres.ts): Action/Suspense are easiest to die in, Fantasy is
+ * harder, Romance is hardest of all — matching how dangerous each
+ * genre's world plausibly is. A player who never leans aggressive
+ * will never trigger this, regardless of genre.
+ */
+export function checkForDeath(karma: KarmaVector, genreThreshold: number): boolean {
+  return karma.force >= genreThreshold;
+}
+
+/**
  * Stories created before the genre-axis feature have a karma_vector
  * in the database missing the genre_axis key entirely. This backfills
  * it to 0 so older in-progress stories don't break when resumed.

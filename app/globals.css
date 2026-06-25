@@ -10,6 +10,14 @@
   box-sizing: border-box;
 }
 
+/* Without this, scrolling past the top/bottom edge of the page
+   (rubber-band/overscroll bounce) reveals the browser's default
+   white background showing through behind the body, since only
+   body had a background color set, not html itself. */
+html {
+  background-color: theme("colors.parchment");
+}
+
 body {
   min-height: 100vh;
 }

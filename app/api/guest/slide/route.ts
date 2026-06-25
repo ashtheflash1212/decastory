@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAIProvider } from "@/lib/ai/provider";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompts";
-import { applyChoiceToKarma, computePhase, isFinalSlide, maybeForceStatCheck, withGenreAxisDefault } from "@/lib/ai/pacing";
+import { applyChoiceToKarma, checkForDeath, computePhase, isFinalSlide, maybeForceStatCheck, withGenreAxisDefault } from "@/lib/ai/pacing";
 import { Choice, KarmaVector, MaturityRating } from "@/lib/types";
+import { getGenre } from "@/lib/genres";
 
 /**
  * Guest mode: identical AI generation + pacing logic as the
@@ -59,6 +60,8 @@ export async function POST(req: NextRequest) {
   const nextSlideNumber = priorSlides.length ? priorSlides[priorSlides.length - 1].slide_number + 1 : 1;
   const phase = computePhase(nextSlideNumber, slide_budget);
   const forcedStatCheck = maybeForceStatCheck(karma, nextSlideNumber, slide_budget);
+  const isFinal = isFinalSlide(nextSlideNumber, slide_budget);
+  const died = isFinal && checkForDeath(karma, getGenre(genre).deathThreshold);
 
   const systemPrompt = buildSystemPrompt(genre, maturity_rating, slide_budget, proseLength);
   const userPrompt = buildUserPrompt({
@@ -70,6 +73,7 @@ export async function POST(req: NextRequest) {
     lastChoiceText,
     seedPrompt: seed_prompt ?? null,
     forcedStatCheck,
+    died,
   });
 
   const ai = await getAIProvider();
@@ -92,7 +96,6 @@ export async function POST(req: NextRequest) {
     // best-effort, never block the story over this
   }
 
-  const isFinal = isFinalSlide(nextSlideNumber, slide_budget);
   const choices: Choice[] = isFinal ? [] : aiResponse.choices.slice(0, 3);
 
   return NextResponse.json({
@@ -105,6 +108,7 @@ export async function POST(req: NextRequest) {
     },
     karma_vector: karma,
     is_final: isFinal,
+    died,
     story_title: isFinal ? aiResponse.story_title : null,
   });
 }

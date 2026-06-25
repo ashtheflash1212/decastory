@@ -3,9 +3,17 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAIProvider } from "@/lib/ai/provider";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompts";
-import { applyChoiceToKarma, computePhase, isFinalSlide, maybeForceStatCheck, withGenreAxisDefault } from "@/lib/ai/pacing";
+import {
+  applyChoiceToKarma,
+  checkForDeath,
+  computePhase,
+  isFinalSlide,
+  maybeForceStatCheck,
+  withGenreAxisDefault,
+} from "@/lib/ai/pacing";
 import { Choice, KarmaVector, SlideRecord } from "@/lib/types";
 import { DAILY_SLIDE_LIMIT, getEasternDateString } from "@/lib/limits";
+import { getGenre } from "@/lib/genres";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -83,6 +91,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const nextSlideNumber = (lastSlide?.slide_number ?? 0) + 1;
   const phase = computePhase(nextSlideNumber, story.slide_budget);
   const forcedStatCheck = maybeForceStatCheck(karma, nextSlideNumber, story.slide_budget);
+  const isFinal = isFinalSlide(nextSlideNumber, story.slide_budget);
+  const died = isFinal && checkForDeath(karma, getGenre(story.genre).deathThreshold);
 
   // Resolve which choice text was actually picked at each prior
   // slide, so the AI can callback to specific earlier decisions by
@@ -103,6 +113,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     lastChoiceText,
     seedPrompt: story.seed_prompt,
     forcedStatCheck,
+    died,
   });
 
   const ai = await getAIProvider();
@@ -127,7 +138,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // intentionally ignored
   }
 
-  const isFinal = isFinalSlide(nextSlideNumber, story.slide_budget);
   const choices: Choice[] = isFinal ? [] : aiResponse.choices.slice(0, 3); // hard cap at 3, schema rule #4
 
   const { data: newSlide, error: slideErr } = await supabase
@@ -149,11 +159,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const storyUpdate: Record<string, unknown> = { karma_vector: karma };
   if (isFinal) {
-    storyUpdate.status = "completed";
+    storyUpdate.status = died ? "failed" : "completed";
     storyUpdate.completed_at = new Date().toISOString();
     if (aiResponse.story_title) storyUpdate.title = aiResponse.story_title;
   }
   await supabase.from("stories").update(storyUpdate).eq("id", story.id);
 
-  return NextResponse.json({ slide: newSlide, karma_vector: karma, is_final: isFinal });
+  return NextResponse.json({ slide: newSlide, karma_vector: karma, is_final: isFinal, died });
 }

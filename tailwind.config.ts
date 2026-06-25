@@ -17,6 +17,7 @@ const config: Config = {
         cocoa: "#6B4F33", // dark brown — for text/labels where cream lacks contrast
         rust: "#C1453D", // warm red accent (errors, "force" axis)
         steel: "#3F7EA6", // soft blue accent (secondary actions, "prudence" axis)
+        sage: "#8FAE7E", // light warm green — added accent for warmth and hover states
         mystic: "#8B6FB3", // violet accent — the genre-specific 4th karma axis
       },
       fontFamily: {

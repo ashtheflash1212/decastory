@@ -30,6 +30,7 @@ export default function GuestPlay() {
   const [karma, setKarma] = useState<KarmaVector>({ prudence: 0, force: 0, subtlety: 0, genre_axis: 0 });
   const [storyTitle, setStoryTitle] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const [died, setDied] = useState(false);
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +71,7 @@ export default function GuestPlay() {
       setKarma(data.karma_vector);
       if (data.is_final) {
         setIsComplete(true);
+        setDied(!!data.died);
         if (data.story_title) setStoryTitle(data.story_title);
       }
     } catch (e: any) {
@@ -90,6 +92,7 @@ export default function GuestPlay() {
     setKarma({ prudence: 0, force: 0, subtlety: 0, genre_axis: 0 });
     setStoryTitle(null);
     setIsComplete(false);
+    setDied(false);
     setError(null);
     setPhase("config");
   }
@@ -241,7 +244,9 @@ export default function GuestPlay() {
 
             {isComplete && (
               <div className="mt-8 border-t border-surface2 pt-6">
-                <p className="font-mech text-xs uppercase tracking-wide text-cocoa mb-2">Story Complete</p>
+                <p className={`font-mech text-xs uppercase tracking-wide mb-2 ${died ? "text-rust" : "text-cocoa"}`}>
+                  {died ? "☠ You Died" : "Story Complete"}
+                </p>
                 {storyTitle && <p className="font-display text-lg mb-4">{storyTitle}</p>}
                 <p className="text-sm text-muted mb-6">
                   This guest story wasn't saved.{" "}

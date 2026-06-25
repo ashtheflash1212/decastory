@@ -134,14 +134,63 @@ export default function VaultCard({
   return (
     <Link
       href={`/story/${story.id}`}
-      className="relative rounded-lg border border-surface2 bg-surface px-4 py-4 hover:border-brass transition block"
+      className="rounded-xl border-2 border-surface2 bg-surface p-5 hover:border-brass transition-all duration-200 hover:scale-[1.01] block"
     >
-      <div className="absolute top-3 right-3 flex items-center gap-3">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-2xl text-cocoa">{GENRE_ICON[story.genre] ?? "●"}</span>
+        <span
+          className={`font-mech text-[10px] uppercase tracking-wide px-2 py-1 rounded ${
+            story.status === "completed"
+              ? "bg-surface2 text-cocoa"
+              : story.status === "failed"
+              ? "bg-surface2 text-rust"
+              : "bg-surface2 text-steel"
+          }`}
+        >
+          {story.status === "completed" ? "Complete" : story.status === "failed" ? "Died" : "In Progress"}
+        </span>
+      </div>
+
+      {editingTitle ? (
+        <input
+          autoFocus
+          value={titleDraft}
+          onChange={(e) => setTitleDraft(e.target.value)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onBlur={saveTitle}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") saveTitle();
+            if (e.key === "Escape") setEditingTitle(false);
+          }}
+          disabled={savingTitle}
+          className="font-display text-xl w-full bg-surface2 rounded px-2 -mx-2 py-1 outline-none border-2 border-steel mb-2"
+        />
+      ) : (
+        <h2
+          onClick={startEditingTitle}
+          title="Click to rename"
+          className="font-display text-xl leading-snug hover:underline cursor-text mb-2"
+        >
+          {story.title}
+        </h2>
+      )}
+
+      <p className="text-sm text-muted">
+        {story.slides?.length ?? 0}/{story.slide_budget} slides survived
+      </p>
+      <p className="font-mech text-[11px] text-muted mt-1.5 mb-4">
+        {new Date(story.created_at).toLocaleDateString()}
+      </p>
+
+      <div className="flex items-center justify-between gap-2 pt-3 border-t border-surface2">
         <button
           onClick={handleToggleFavorite}
           disabled={favoriting}
           title={story.is_favorite ? "Remove from favorites" : "Mark as favorite"}
-          className="text-base leading-none disabled:opacity-40"
+          className="text-lg leading-none disabled:opacity-40 transition-transform hover:scale-110"
         >
           <span className={story.is_favorite ? "text-yellow-500" : "text-muted hover:text-yellow-500"}>
             {story.is_favorite ? "★" : "☆"}
@@ -161,54 +210,9 @@ export default function VaultCard({
           title="Delete story"
           className="font-mech text-[11px] text-muted hover:text-rust disabled:opacity-40"
         >
-          {deleting ? "…" : "✕"}
+          {deleting ? "…" : "✕ Delete"}
         </button>
       </div>
-
-      <div className="flex items-center justify-between mb-2 pr-28">
-        <span className="text-2xl text-cocoa">{GENRE_ICON[story.genre] ?? "●"}</span>
-        <span
-          className={`font-mech text-[10px] uppercase tracking-wide px-2 py-0.5 rounded ${
-            story.status === "completed" ? "bg-surface2 text-cocoa" : "bg-surface2 text-steel"
-          }`}
-        >
-          {story.status === "completed" ? "Complete" : "In Progress"}
-        </span>
-      </div>
-
-      {editingTitle ? (
-        <input
-          autoFocus
-          value={titleDraft}
-          onChange={(e) => setTitleDraft(e.target.value)}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onBlur={saveTitle}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") saveTitle();
-            if (e.key === "Escape") setEditingTitle(false);
-          }}
-          disabled={savingTitle}
-          className="font-display text-lg w-full bg-surface2 rounded px-1 -mx-1 outline-none border border-steel pr-6"
-        />
-      ) : (
-        <h2
-          onClick={startEditingTitle}
-          title="Click to rename"
-          className="font-display text-lg pr-6 hover:underline cursor-text"
-        >
-          {story.title}
-        </h2>
-      )}
-
-      <p className="text-sm text-muted mt-1">
-        {story.slides?.length ?? 0}/{story.slide_budget} slides survived
-      </p>
-      <p className="font-mech text-[11px] text-muted mt-2">
-        {new Date(story.created_at).toLocaleDateString()}
-      </p>
     </Link>
   );
 }
