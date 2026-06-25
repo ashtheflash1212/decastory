@@ -13,7 +13,8 @@ const config: Config = {
         surface2: "#D8E9F5", // hover / active background
         ink: "#27352E", // primary text — warm dark slate-green
         muted: "#6B7D72", // secondary text
-        brass: "#D9954D", // warm amber accent (primary actions)
+        brass: "#D9C5A0", // warm cream accent — backgrounds/buttons only
+        cocoa: "#6B4F33", // dark brown — for text/labels where cream lacks contrast
         rust: "#C1453D", // warm red accent (errors, "force" axis)
         steel: "#3F7EA6", // soft blue accent (secondary actions, "prudence" axis)
         mystic: "#8B6FB3", // violet accent — the genre-specific 4th karma axis

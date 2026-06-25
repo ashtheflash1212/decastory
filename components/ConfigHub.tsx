@@ -62,7 +62,7 @@ export default function ConfigHub({
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">
-      <p className="font-mech text-xs uppercase tracking-[0.2em] text-brass mb-2">Configuration Hub</p>
+      <p className="font-mech text-xs uppercase tracking-[0.2em] text-cocoa mb-2">Configuration Hub</p>
       <div className="flex items-center justify-between gap-4 mb-2">
         <h1 className="font-display text-4xl">Build your canvas.</h1>
         <span

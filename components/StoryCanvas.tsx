@@ -116,7 +116,7 @@ export default function StoryCanvas({
 
         {isComplete && (
           <div className="mt-8 border-t border-surface2 pt-6">
-            <p className="font-mech text-xs uppercase tracking-wide text-brass mb-3">Story Complete</p>
+            <p className="font-mech text-xs uppercase tracking-wide text-cocoa mb-3">Story Complete</p>
             <p className="text-sm text-muted mb-4">
               {slides.length}/{story.slide_budget} slides survived.
             </p>
@@ -132,7 +132,7 @@ export default function StoryCanvas({
                 </button>
               ))}
             </div>
-            <a href="/vault" className="inline-block mt-6 text-sm text-muted hover:text-brass underline">
+            <a href="/vault" className="inline-block mt-6 text-sm text-muted hover:text-cocoa underline">
               Return to Chronicle Vault
             </a>
           </div>

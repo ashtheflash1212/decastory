@@ -23,6 +23,8 @@ create table if not exists stories (
   seed_prompt text,
   parent_story_id uuid references stories(id) on delete set null,
   branch_point_slide int,
+  share_token uuid not null default gen_random_uuid(),
+  is_public boolean not null default false,
   created_at timestamptz not null default now(),
   completed_at timestamptz
 );
@@ -70,9 +72,22 @@ create policy "stories: owner update" on stories
 create policy "stories: owner delete" on stories
   for delete using (auth.uid() = user_id);
 
+-- Anyone (including unauthenticated visitors) can read a story once
+-- the owner has explicitly marked it public via share_token — this
+-- is what powers the public share-link feature. Owner-only policies
+-- above still apply for everything else; Postgres OR's permissive
+-- policies together, so this only ADDS read access, never removes it.
+create policy "stories: public read when shared" on stories
+  for select using (is_public = true);
+
 create policy "slides: owner read" on slides
   for select using (
     exists (select 1 from stories s where s.id = slides.story_id and s.user_id = auth.uid())
+  );
+
+create policy "slides: public read when shared" on slides
+  for select using (
+    exists (select 1 from stories s where s.id = slides.story_id and s.is_public = true)
   );
 
 create policy "slides: owner insert" on slides

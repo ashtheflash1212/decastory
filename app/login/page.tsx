@@ -36,7 +36,7 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
-        <p className="font-mech text-xs uppercase tracking-[0.2em] text-brass mb-2">DecaStory</p>
+        <p className="font-mech text-xs uppercase tracking-[0.2em] text-cocoa mb-2">DecaStory</p>
         <h1 className="font-display text-4xl mb-8">
           {mode === "sign_in" ? "Welcome back." : "Begin your archive."}
         </h1>

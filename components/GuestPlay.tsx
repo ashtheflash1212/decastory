@@ -99,7 +99,7 @@ export default function GuestPlay() {
   return (
     <main className="min-h-screen">
       <nav className="flex items-center justify-between px-6 py-4 border-b border-surface2">
-        <span className="font-mech text-xs uppercase tracking-[0.2em] text-brass">DecaStory — Guest</span>
+        <span className="font-mech text-xs uppercase tracking-[0.2em] text-cocoa">DecaStory — Guest</span>
         <Link href="/login" className="font-mech text-xs text-steel hover:underline">
           Sign up to save your stories
         </Link>
@@ -113,7 +113,7 @@ export default function GuestPlay() {
 
       {phase === "config" && (
         <div className="max-w-2xl mx-auto px-6 pb-12">
-          <p className="font-mech text-xs uppercase tracking-[0.2em] text-brass mb-2">Configuration Hub</p>
+          <p className="font-mech text-xs uppercase tracking-[0.2em] text-cocoa mb-2">Configuration Hub</p>
           <h1 className="font-display text-4xl mb-10">Build your canvas.</h1>
 
           <section className="mb-8">
@@ -240,7 +240,7 @@ export default function GuestPlay() {
 
             {isComplete && (
               <div className="mt-8 border-t border-surface2 pt-6">
-                <p className="font-mech text-xs uppercase tracking-wide text-brass mb-2">Story Complete</p>
+                <p className="font-mech text-xs uppercase tracking-wide text-cocoa mb-2">Story Complete</p>
                 {storyTitle && <p className="font-display text-lg mb-4">{storyTitle}</p>}
                 <p className="text-sm text-muted mb-6">
                   This guest story wasn't saved.{" "}

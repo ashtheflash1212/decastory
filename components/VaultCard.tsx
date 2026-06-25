@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 const GENRE_ICON: Record<string, string> = {
-  action: "⚡",
+  action: "▲",
   suspense: "◐",
   fantasy: "✦",
   romance: "♡",
@@ -26,6 +26,8 @@ export default function VaultCard({
 }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [justCopied, setJustCopied] = useState(false);
 
   async function handleDelete(e: React.MouseEvent) {
     e.preventDefault();
@@ -47,25 +49,56 @@ export default function VaultCard({
     }
   }
 
+  async function handleShare(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setSharing(true);
+    try {
+      const res = await fetch(`/api/stories/${story.id}/share`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to share story.");
+
+      const url = `${window.location.origin}/shared/${data.share_token}`;
+      await navigator.clipboard.writeText(url);
+      setJustCopied(true);
+      setTimeout(() => setJustCopied(false), 2000);
+    } catch (err: any) {
+      alert(err.message ?? "Failed to share story.");
+    } finally {
+      setSharing(false);
+    }
+  }
+
   return (
     <Link
       href={`/story/${story.id}`}
       className="relative rounded-lg border border-surface2 bg-surface px-4 py-4 hover:border-brass transition block"
     >
-      <button
-        onClick={handleDelete}
-        disabled={deleting}
-        title="Delete story"
-        className="absolute top-3 right-3 font-mech text-[11px] text-muted hover:text-rust disabled:opacity-40"
-      >
-        {deleting ? "…" : "✕"}
-      </button>
+      <div className="absolute top-3 right-3 flex items-center gap-3">
+        <button
+          onClick={handleShare}
+          disabled={sharing}
+          title="Copy a shareable read-only link"
+          className="font-mech text-[11px] text-muted hover:text-steel disabled:opacity-40"
+        >
+          {sharing ? "…" : justCopied ? "Copied!" : "⤴ Share"}
+        </button>
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          title="Delete story"
+          className="font-mech text-[11px] text-muted hover:text-rust disabled:opacity-40"
+        >
+          {deleting ? "…" : "✕"}
+        </button>
+      </div>
 
-      <div className="flex items-center justify-between mb-2 pr-6">
-        <span className="text-2xl text-brass">{GENRE_ICON[story.genre] ?? "●"}</span>
+      <div className="flex items-center justify-between mb-2 pr-20">
+        <span className="text-2xl text-cocoa">{GENRE_ICON[story.genre] ?? "●"}</span>
         <span
           className={`font-mech text-[10px] uppercase tracking-wide px-2 py-0.5 rounded ${
-            story.status === "completed" ? "bg-surface2 text-brass" : "bg-surface2 text-steel"
+            story.status === "completed" ? "bg-surface2 text-cocoa" : "bg-surface2 text-steel"
           }`}
         >
           {story.status === "completed" ? "Complete" : "In Progress"}
