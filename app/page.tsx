@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { DAILY_STORY_LIMIT } from "@/lib/limits";
+import { DAILY_STORY_LIMIT, getEasternMidnightUTC } from "@/lib/limits";
 import ConfigHub from "@/components/ConfigHub";
 import TopNav from "@/components/TopNav";
 
@@ -9,14 +9,11 @@ export default async function HomePage() {
   const { data } = await supabase.auth.getUser();
   if (!data.user) redirect("/login");
 
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-
   const { count } = await supabase
     .from("stories")
     .select("*", { count: "exact", head: true })
     .eq("user_id", data.user.id)
-    .gte("created_at", todayStart.toISOString());
+    .gte("created_at", getEasternMidnightUTC().toISOString());
 
   const storiesToday = count ?? 0;
 
