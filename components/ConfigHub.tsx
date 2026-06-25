@@ -16,7 +16,7 @@ export default function ConfigHub({
   const router = useRouter();
   const [genre, setGenre] = useState(GENRES[0].id);
   const [rating, setRating] = useState<"G" | "PG" | "R">("PG");
-  const [budget, setBudget] = useState<5 | 10>(5);
+  const [budget, setBudget] = useState<5 | 10 | 20>(5);
   const [proseLength, setProseLength] = useState<"concise" | "standard">("standard");
   const [seed, setSeed] = useState("");
   const [loading, setLoading] = useState(false);
@@ -123,10 +123,10 @@ export default function ConfigHub({
       <section className="mb-8">
         <h2 className="font-mech text-xs uppercase tracking-wide text-muted mb-3">Slide Pacing Budget</h2>
         <div className="inline-flex rounded-lg border border-surface2 overflow-hidden">
-          {[5, 10].map((n) => (
+          {[5, 10, 20].map((n) => (
             <button
               key={n}
-              onClick={() => setBudget(n as 5 | 10)}
+              onClick={() => setBudget(n as 5 | 10 | 20)}
               className={`px-5 py-2 font-mech text-sm ${
                 budget === n ? "bg-brass text-ink" : "bg-surface text-ink hover:bg-surface2"
               }`}
@@ -136,7 +136,7 @@ export default function ConfigHub({
           ))}
         </div>
         <p className="text-sm text-muted mt-1">
-          {budget === 5 ? "Paced Flash Fiction" : "Standard Novella Arc"}
+          {budget === 5 ? "Paced Flash Fiction" : budget === 10 ? "Standard Novella Arc" : "Extended Saga"}
         </p>
       </section>
 

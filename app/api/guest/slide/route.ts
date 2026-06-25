@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   }: {
     genre: string;
     maturity_rating: MaturityRating;
-    slide_budget: 5 | 10;
+    slide_budget: 5 | 10 | 20;
     prose_length?: "concise" | "standard";
     seed_prompt: string | null;
     karma_vector: KarmaVector;
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   const proseLength: "concise" | "standard" = prose_length === "concise" ? "concise" : "standard";
 
-  if (!genre || !["G", "PG", "R"].includes(maturity_rating) || ![5, 10].includes(slide_budget)) {
+  if (!genre || !["G", "PG", "R"].includes(maturity_rating) || ![5, 10, 20].includes(slide_budget)) {
     return NextResponse.json({ error: "Invalid story configuration." }, { status: 400 });
   }
 

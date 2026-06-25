@@ -46,7 +46,7 @@ export interface StoryRecord {
   title: string;
   genre: string;
   maturity_rating: MaturityRating;
-  slide_budget: 5 | 10;
+  slide_budget: 5 | 10 | 20;
   prose_length: "concise" | "standard";
   status: "in_progress" | "completed" | "failed";
   karma_vector: KarmaVector;

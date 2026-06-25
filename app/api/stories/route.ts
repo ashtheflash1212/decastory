@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const { genre, maturity_rating, slide_budget, seed_prompt, prose_length } = body;
   const proseLength = ["concise", "standard"].includes(prose_length) ? prose_length : "standard";
 
-  if (!genre || !["G", "PG", "R"].includes(maturity_rating) || ![5, 10].includes(slide_budget)) {
+  if (!genre || !["G", "PG", "R"].includes(maturity_rating) || ![5, 10, 20].includes(slide_budget)) {
     return NextResponse.json({ error: "Invalid story configuration." }, { status: 400 });
   }
 
