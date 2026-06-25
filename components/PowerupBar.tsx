@@ -69,14 +69,14 @@ export default function PowerupBar({
                 title={p.label}
                 className={`w-16 h-16 rounded-lg border-2 flex flex-col items-center justify-center transition-all duration-200 ${
                   disabled
-                    ? "opacity-40 cursor-not-allowed border-surface2 bg-surface"
+                    ? "opacity-40 cursor-not-allowed border-surface2 bg-yellow-50 text-black"
                     : isArmed
-                    ? "border-brass bg-surface2 scale-105"
-                    : "border-surface2 bg-surface hover:border-sage hover:scale-105"
+                    ? "border-brass bg-yellow-100 text-black scale-105"
+                    : "border-surface2 bg-yellow-50 text-black hover:border-sage hover:scale-105"
                 }`}
               >
-                <span className="text-xl">{p.icon}</span>
-                <span className="font-mech text-[9px] uppercase mt-0.5">{p.label}</span>
+                <span className="text-xl text-black">{p.icon}</span>
+                <span className="font-mech text-[9px] uppercase mt-0.5 text-black">{p.label}</span>
               </button>
 
               <button
