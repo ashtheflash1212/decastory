@@ -1,5 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getGenre } from "@/lib/genres";
 import StoryCanvas from "@/components/StoryCanvas";
 import TopNav from "@/components/TopNav";
 
@@ -26,7 +27,7 @@ export default async function StoryPage({ params }: { params: { id: string } }) 
   if (!slides || slides.length === 0) notFound();
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen" style={{ backgroundColor: getGenre(story.genre).cardBg }}>
       <TopNav email={userData.user.email ?? ""} />
       <StoryCanvas story={story} slides={slides} />
     </main>

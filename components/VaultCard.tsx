@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getGenre } from "@/lib/genres";
 
 const GENRE_ICON: Record<string, string> = {
   action: "▲",
@@ -144,7 +145,8 @@ export default function VaultCard({
   return (
     <Link
       href={`/story/${story.id}`}
-      className="rounded-xl border-2 border-surface2 bg-surface p-5 hover:border-brass transition-all duration-200 hover:scale-[1.01] block"
+      style={{ backgroundColor: getGenre(story.genre).cardBg }}
+      className="rounded-xl border-2 border-surface2 hover:border-brass transition-all duration-200 hover:scale-[1.01] block p-5"
     >
       <div className="flex items-center justify-between mb-3">
         <span className="text-2xl text-cocoa">{GENRE_ICON[story.genre] ?? "●"}</span>

@@ -53,8 +53,8 @@ export default function ChoiceCard({
       onClick={onSelect}
       disabled={disabled}
       style={climaxStyle}
-      className={`w-full text-left rounded-lg border px-4 py-3 transition disabled:opacity-40 disabled:cursor-not-allowed ${
-        isClimax ? "hover:opacity-90" : "border-surface2 bg-surface hover:border-brass hover:bg-surface2"
+      className={`w-full text-left rounded-lg px-4 py-3 transition disabled:opacity-40 disabled:cursor-not-allowed ${
+        isClimax ? "border-2 hover:opacity-90" : "border border-surface2 bg-surface hover:border-brass hover:bg-surface2"
       }`}
     >
       <div className="flex items-start gap-3">

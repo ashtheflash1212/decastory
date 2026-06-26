@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GENRES } from "@/lib/genres";
+import { GENRES, getGenre } from "@/lib/genres";
 import { Choice, KarmaVector } from "@/lib/types";
 import ProgressRibbon from "./ProgressRibbon";
 import ChoiceCard from "./ChoiceCard";
@@ -104,7 +104,7 @@ export default function GuestPlay() {
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen" style={phase === "playing" ? { backgroundColor: getGenre(genre).cardBg } : undefined}>
       <nav
         className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-surface2"
         style={{ backgroundColor: "#BFD8EC" }}
