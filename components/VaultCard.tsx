@@ -11,19 +11,23 @@ const GENRE_ICON: Record<string, string> = {
   romance: "♡",
 };
 
+export type VaultStory = {
+  id: string;
+  title: string;
+  genre: string;
+  status: string;
+  slide_budget: number;
+  created_at: string;
+  is_favorite?: boolean;
+  slides?: { slide_number: number }[];
+};
+
 export default function VaultCard({
   story,
+  onContinue,
 }: {
-  story: {
-    id: string;
-    title: string;
-    genre: string;
-    status: string;
-    slide_budget: number;
-    created_at: string;
-    is_favorite?: boolean;
-    slides?: { slide_number: number }[];
-  };
+  story: VaultStory;
+  onContinue: (story: VaultStory) => void;
 }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
@@ -131,6 +135,12 @@ export default function VaultCard({
     }
   }
 
+  function handleContinueClick(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    onContinue(story);
+  }
+
   return (
     <Link
       href={`/story/${story.id}`}
@@ -196,6 +206,15 @@ export default function VaultCard({
             {story.is_favorite ? "★" : "☆"}
           </span>
         </button>
+        {story.status === "completed" && (
+          <button
+            onClick={handleContinueClick}
+            title="Continue this story"
+            className="text-lg leading-none text-muted hover:text-steel transition-transform hover:scale-110"
+          >
+            📖
+          </button>
+        )}
         <button
           onClick={handleShare}
           disabled={sharing}

@@ -1,12 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+const LINKS = [
+  { href: "/", label: "New Story" },
+  { href: "/vault", label: "Chronicle Vault" },
+  { href: "/how-it-works", label: "How It Works?" },
+  { href: "/timeline", label: "Timeline Tree" },
+  { href: "/achievements", label: "Achievements" },
+];
+
 export default function TopNav({ email }: { email: string }) {
   const router = useRouter();
   const supabase = createClient();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -16,60 +26,63 @@ export default function TopNav({ email }: { email: string }) {
 
   return (
     <nav className="border-b border-surface2" style={{ backgroundColor: "#BFD8EC" }}>
-      {/* Row 1: logo + sign out — always visible, this row alone is enough on mobile to feel uncluttered */}
       <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
         <Link href="/" className="font-mech text-xs uppercase tracking-[0.2em] text-black">
           DecaStory
         </Link>
 
-        {/* Desktop: everything inline in one row, each "tab" divided by a thin line */}
-        <div className="hidden sm:flex items-center text-sm divide-x divide-cocoa/20">
-          <Link href="/" className="px-3 transition-colors hover:text-sage">
-            New Story
-          </Link>
-          <Link href="/vault" className="px-3 transition-colors hover:text-sage">
-            Chronicle Vault
-          </Link>
-          <Link href="/how-it-works" className="px-3 transition-colors hover:text-sage">
-            How It Works?
-          </Link>
-          <Link href="/timeline" className="px-3 transition-colors hover:text-sage">
-            Timeline Tree
-          </Link>
-          <Link href="/achievements" className="px-3 transition-colors hover:text-sage">
-            Achievements
-          </Link>
+        {/* Desktop: pill-style links, no divider lines */}
+        <div className="hidden sm:flex items-center gap-1 text-sm">
+          {LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="px-3 py-1.5 rounded-md transition-colors hover:bg-white/40 hover:text-sage"
+            >
+              {link.label}
+            </Link>
+          ))}
           <span className="px-3 text-muted">{email}</span>
-          <button onClick={signOut} className="px-3 text-muted transition-colors hover:text-rust">
+          <button
+            onClick={signOut}
+            className="px-3 py-1.5 rounded-md text-muted transition-colors hover:bg-white/40 hover:text-rust"
+          >
             Sign out
           </button>
         </div>
 
-        {/* Mobile: just sign out up here, rest moves to row 2 */}
-        <button onClick={signOut} className="sm:hidden text-sm text-muted hover:text-rust">
-          Sign out
+        {/* Mobile: hamburger toggle */}
+        <button
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label="Toggle menu"
+          className="sm:hidden w-9 h-9 flex items-center justify-center rounded-md hover:bg-white/40 transition-colors"
+        >
+          <span className="font-mech text-lg leading-none">{menuOpen ? "✕" : "☰"}</span>
         </button>
       </div>
 
-      {/* Row 2: mobile-only — nav links + email, given their own breathing room */}
-      <div className="flex sm:hidden items-center gap-4 px-4 pb-3 text-sm overflow-x-auto divide-x divide-cocoa/20">
-        <Link href="/" className="pl-0 pr-4 hover:text-sage whitespace-nowrap">
-          New Story
-        </Link>
-        <Link href="/vault" className="pl-4 pr-4 hover:text-sage whitespace-nowrap">
-          Chronicle Vault
-        </Link>
-        <Link href="/how-it-works" className="pl-4 pr-4 hover:text-sage whitespace-nowrap">
-          How It Works?
-        </Link>
-        <Link href="/timeline" className="pl-4 pr-4 hover:text-sage whitespace-nowrap">
-          Timeline Tree
-        </Link>
-        <Link href="/achievements" className="pl-4 pr-4 hover:text-sage whitespace-nowrap">
-          Achievements
-        </Link>
-        <span className="pl-4 text-muted text-xs truncate">{email}</span>
-      </div>
+      {/* Mobile dropdown - only rendered when open */}
+      {menuOpen && (
+        <div className="sm:hidden px-4 pb-4 space-y-1">
+          {LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setMenuOpen(false)}
+              className="block px-3 py-2.5 rounded-md text-sm transition-colors hover:bg-white/40 hover:text-sage"
+            >
+              {link.label}
+            </Link>
+          ))}
+          <div className="px-3 py-2 text-sm text-muted truncate">{email}</div>
+          <button
+            onClick={signOut}
+            className="block w-full text-left px-3 py-2.5 rounded-md text-sm text-muted transition-colors hover:bg-white/40 hover:text-rust"
+          >
+            Sign out
+          </button>
+        </div>
+      )}
     </nav>
   );
 }

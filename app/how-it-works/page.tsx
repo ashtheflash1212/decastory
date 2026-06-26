@@ -88,10 +88,14 @@ export default function HowItWorksPage() {
               </span>
               <h2 className="font-display text-2xl">Timeline Split</h2>
             </div>
-            <p className="text-[15px] leading-relaxed">
+            <p className="text-[15px] leading-relaxed mb-3">
               Once a story is finished, you can fork it from any earlier slide into a brand new 5-slide story — same
               history up to that point, but a fresh path forward. Useful for exploring "what if I'd chosen
               differently?"
+            </p>
+            <p className="text-sm text-muted">
+              Timeline Split and the Timeline Tree page are only available on a signed-in account — guest stories
+              aren't saved, so there's nothing to branch from or trace.
             </p>
           </section>
         </div>

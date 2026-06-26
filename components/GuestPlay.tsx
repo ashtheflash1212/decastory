@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GENRES, getGenre } from "@/lib/genres";
+import { GENRES } from "@/lib/genres";
 import { Choice, KarmaVector } from "@/lib/types";
-import { canUsePowerupAt, getPowerupAllotment } from "@/lib/ai/pacing";
 import ProgressRibbon from "./ProgressRibbon";
 import ChoiceCard from "./ChoiceCard";
-import PowerupBar, { PowerupType } from "./PowerupBar";
 
 const RATINGS = ["G", "PG", "R"] as const;
 const COOLDOWN_SECONDS = 4;
@@ -24,7 +22,7 @@ export default function GuestPlay() {
   const [phase, setPhase] = useState<"config" | "playing">("config");
   const [genre, setGenre] = useState(GENRES[0].id);
   const [rating, setRating] = useState<"G" | "PG" | "R">("PG");
-  const [budget, setBudget] = useState<5 | 10 | 20>(5);
+  const [budget, setBudget] = useState<5 | 10>(5);
   const [proseLength, setProseLength] = useState<"concise" | "standard">("standard");
   const [seed, setSeed] = useState("");
 
@@ -36,9 +34,6 @@ export default function GuestPlay() {
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [powerupsRemaining, setPowerupsRemaining] = useState(0);
-  const [shieldActive, setShieldActive] = useState(false);
-  const [armedPowerup, setArmedPowerup] = useState<PowerupType | null>(null);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -47,8 +42,9 @@ export default function GuestPlay() {
   }, [cooldown]);
 
   const isBusy = loading || cooldown > 0;
+  const currentSlide = slides[slides.length - 1];
 
-  async function requestSlide(lastChoice: Choice | null, forceNullSeed: boolean = false, powerupsOverride?: number) {
+  async function requestSlide(lastChoice: Choice | null, forceNullSeed: boolean = false) {
     setLoading(true);
     setError(null);
     try {
@@ -64,9 +60,6 @@ export default function GuestPlay() {
           karma_vector: karma,
           history: slides.map((s) => ({ slide_number: s.slide_number, prose: s.prose, chosen_text: s.chosen_text })),
           last_choice: lastChoice,
-          powerup: armedPowerup,
-          powerups_remaining: powerupsOverride ?? powerupsRemaining,
-          shield_active: shieldActive,
         }),
       });
       const data = await res.json();
@@ -77,9 +70,6 @@ export default function GuestPlay() {
         data.slide,
       ]);
       setKarma(data.karma_vector);
-      setPowerupsRemaining(data.powerups_remaining ?? powerupsOverride ?? powerupsRemaining);
-      setShieldActive(!!data.shield_active);
-      setArmedPowerup(null);
       if (data.is_final) {
         setIsComplete(true);
         setDied(!!data.died);
@@ -94,19 +84,13 @@ export default function GuestPlay() {
   }
 
   function startStory() {
-    const allotment = getPowerupAllotment(budget);
-    setPowerupsRemaining(allotment);
-    setShieldActive(false);
     setPhase("playing");
-    requestSlide(null, false, allotment);
+    requestSlide(null, false);
   }
 
   function startStoryRandom() {
-    const allotment = getPowerupAllotment(budget);
-    setPowerupsRemaining(allotment);
-    setShieldActive(false);
     setPhase("playing");
-    requestSlide(null, true, allotment);
+    requestSlide(null, true);
   }
 
   function resetToConfig() {
@@ -115,22 +99,28 @@ export default function GuestPlay() {
     setStoryTitle(null);
     setIsComplete(false);
     setDied(false);
-    setPowerupsRemaining(0);
-    setShieldActive(false);
-    setArmedPowerup(null);
     setError(null);
     setPhase("config");
   }
 
-  const currentSlide = slides[slides.length - 1];
-
   return (
     <main className="min-h-screen">
-      <nav className="flex items-center justify-between px-6 py-4 border-b border-surface2">
-        <span className="font-mech text-xs uppercase tracking-[0.2em] text-cocoa">DecaStory — Guest</span>
-        <Link href="/login" className="font-mech text-xs text-steel hover:underline">
-          Sign up to save your stories
-        </Link>
+      <nav
+        className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-surface2"
+        style={{ backgroundColor: "#BFD8EC" }}
+      >
+        <span className="font-mech text-xs uppercase tracking-[0.2em] text-black">DecaStory — Guest</span>
+        <div className="flex items-center gap-1 text-sm">
+          <Link
+            href="/how-it-works"
+            className="px-3 py-1.5 rounded-md transition-colors hover:bg-white/40 hover:text-sage"
+          >
+            How It Works?
+          </Link>
+          <Link href="/login" className="px-3 py-1.5 rounded-md text-steel transition-colors hover:bg-white/40">
+            Sign up to save
+          </Link>
+        </div>
       </nav>
 
       <div className="max-w-2xl mx-auto px-6 py-4">
@@ -166,11 +156,11 @@ export default function GuestPlay() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <section className="rounded-2xl border-2 border-surface2 bg-surface p-6">
               <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-4">Slide Pacing Budget</h2>
-              <div className="grid grid-cols-3 gap-2">
-                {[5, 10, 20].map((n) => (
+              <div className="grid grid-cols-2 gap-2">
+                {[5, 10].map((n) => (
                   <button
                     key={n}
-                    onClick={() => setBudget(n as 5 | 10 | 20)}
+                    onClick={() => setBudget(n as 5 | 10)}
                     className={`px-2 py-2.5 rounded-xl border-2 font-mech text-sm transition-all duration-200 hover:scale-105 ${
                       budget === n
                         ? "bg-brass border-brass text-ink"
@@ -181,9 +171,8 @@ export default function GuestPlay() {
                   </button>
                 ))}
               </div>
-              <p className="text-sm text-muted mt-3">
-                {budget === 5 ? "Paced Flash Fiction" : budget === 10 ? "Standard Novella Arc" : "Extended Saga"}
-              </p>
+              <p className="text-sm text-muted mt-3">{budget === 5 ? "Paced Flash Fiction" : "Standard Novella Arc"}</p>
+              <p className="text-xs text-muted mt-1">20-slide sagas are available to signed-in accounts.</p>
             </section>
 
             <section className="rounded-2xl border-2 border-surface2 bg-surface p-6">
@@ -280,13 +269,6 @@ export default function GuestPlay() {
 
             {!isComplete && (
               <div className="mt-8 space-y-3">
-                <PowerupBar
-                  remaining={powerupsRemaining}
-                  canUse={canUsePowerupAt(Math.max(currentSlide.slide_number, 1), budget)}
-                  armed={armedPowerup}
-                  onArm={setArmedPowerup}
-                  genreAxisLabel={getGenre(genre).axisLabel}
-                />
                 {currentSlide.choices.map((choice, i) => (
                   <ChoiceCard
                     key={choice.id}
@@ -316,7 +298,7 @@ export default function GuestPlay() {
                   <Link href="/login" className="text-steel underline">
                     Sign up
                   </Link>{" "}
-                  to keep future ones in your Chronicle Vault.
+                  to keep future ones in your Chronicle Vault — and continue them later.
                 </p>
                 <button
                   onClick={resetToConfig}
