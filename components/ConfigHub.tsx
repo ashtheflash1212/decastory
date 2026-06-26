@@ -98,7 +98,7 @@ export default function ConfigHub({
               }`}
             >
               <div className="font-display text-2xl mb-1">{g.label}</div>
-              <div className="text-sm text-ink/70 leading-snug">{g.blurb}</div>
+              <div className="text-sm text-ink/70 leading-snug min-h-[2.5rem]">{g.blurb}</div>
             </button>
           ))}
         </div>

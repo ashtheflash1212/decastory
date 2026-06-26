@@ -14,7 +14,7 @@ export const GENRES = [
   {
     id: "suspense",
     label: "Suspense",
-    blurb: "Something's wrong. You just don't know what yet.",
+    blurb: "Something's wrong. You don't know what.",
     axisLabel: "Paranoia",
     flavorGuidance:
       "Lean into a creeping sense that something is being watched, followed, or hidden — ambiguous details, things half-glimpsed, reasons to distrust what seems safe.",
@@ -26,7 +26,7 @@ export const GENRES = [
   {
     id: "fantasy",
     label: "Fantasy",
-    blurb: "Magic with consequences.",
+    blurb: "Magic that always comes with a price.",
     axisLabel: "Magic",
     flavorGuidance:
       "Lean into magical creatures, enchanted objects, or supernatural forces with real rules and real costs — magic should feel consequential, not decorative.",
