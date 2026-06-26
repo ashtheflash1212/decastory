@@ -267,18 +267,18 @@ export default function GuestPlay() {
 
           {error && <p className="text-rust text-sm mb-4">{error}</p>}
 
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={startStory}
               disabled={loading || !seed.trim()}
-              className="bg-brass text-ink font-medium rounded-xl px-6 py-3 text-base transition-all duration-200 hover:scale-105 hover:opacity-90 disabled:opacity-40 disabled:hover:scale-100"
+              className="w-full sm:w-auto text-center bg-brass text-ink font-medium rounded-xl px-6 py-3 text-base transition-all duration-200 hover:scale-105 hover:opacity-90 disabled:opacity-40 disabled:hover:scale-100"
             >
               {loading ? "Generating…" : "Begin with this opening"}
             </button>
             <button
               onClick={startStoryRandom}
               disabled={loading}
-              className="border-2 border-sage text-sage font-medium rounded-xl px-6 py-3 text-base transition-all duration-200 hover:scale-105 hover:bg-sage hover:text-surface disabled:opacity-40 disabled:hover:scale-100"
+              className="w-full sm:w-auto text-center border-2 border-sage text-sage font-medium rounded-xl px-6 py-3 text-base transition-all duration-200 hover:scale-105 hover:bg-sage hover:text-surface disabled:opacity-40 disabled:hover:scale-100"
             >
               {loading ? "Generating…" : "Random (Insta-Start)"}
             </button>
