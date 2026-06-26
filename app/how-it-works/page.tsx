@@ -1,17 +1,29 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
-export default function HowItWorksPage() {
+export default async function HowItWorksPage() {
+  const supabase = createClient();
+  const { data: userData } = await supabase.auth.getUser();
+  const homeHref = userData.user ? "/" : "/guest";
+
   return (
     <main className="min-h-screen">
-      <nav className="px-6 py-4 border-b border-surface2">
-        <Link href="/" className="font-mech text-xs uppercase tracking-[0.2em] text-cocoa">
+      <nav className="flex items-center justify-between px-6 py-4 border-b border-surface2">
+        <Link href={homeHref} className="font-mech text-xs uppercase tracking-[0.2em] text-cocoa">
           DecaStory
+        </Link>
+        <Link
+          href={homeHref}
+          className="font-mech text-xs text-steel hover:underline whitespace-nowrap"
+        >
+          ← Back to {userData.user ? "homepage" : "guest mode"}
         </Link>
       </nav>
 
       <div className="max-w-5xl mx-auto px-6 py-12">
         <p className="font-mech text-xs uppercase tracking-[0.2em] text-cocoa mb-2">How It Works</p>
         <h1 className="font-display text-4xl mb-10">Reading the story engine.</h1>
+
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <section className="rounded-2xl border-2 border-steel/30 bg-surface p-6 lg:col-span-2">
@@ -102,7 +114,7 @@ export default function HowItWorksPage() {
 
         <p className="text-sm text-muted mt-10 pt-6 border-t border-surface2">
           Ready to try it?{" "}
-          <Link href="/" className="text-steel underline">
+          <Link href={homeHref} className="text-steel underline">
             Build a story
           </Link>
           .

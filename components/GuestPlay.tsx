@@ -19,6 +19,7 @@ type GuestSlide = {
 };
 
 export default function GuestPlay() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [phase, setPhase] = useState<"config" | "playing">("config");
   const [genre, setGenre] = useState(GENRES[0].id);
   const [rating, setRating] = useState<"G" | "PG" | "R">("PG");
@@ -105,22 +106,52 @@ export default function GuestPlay() {
 
   return (
     <main className="min-h-screen" style={phase === "playing" ? { backgroundColor: getGenre(genre).cardBg } : undefined}>
-      <nav
-        className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-surface2"
-        style={{ backgroundColor: "#BFD8EC" }}
-      >
-        <span className="font-mech text-xs uppercase tracking-[0.2em] text-black">DecaStory — Guest</span>
-        <div className="flex items-center gap-1 text-sm">
-          <Link
-            href="/how-it-works"
-            className="px-3 py-1.5 rounded-md transition-colors hover:bg-white/40 hover:text-sage"
+      <nav className="border-b border-surface2" style={{ backgroundColor: "#BFD8EC" }}>
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
+          <span className="font-mech text-xs uppercase tracking-[0.2em] text-black">DecaStory — Guest</span>
+
+          {/* Desktop: inline pill links */}
+          <div className="hidden sm:flex items-center gap-1 text-sm">
+            <Link
+              href="/how-it-works"
+              className="px-3 py-1.5 rounded-md transition-colors hover:bg-white/40 hover:text-sage"
+            >
+              How It Works?
+            </Link>
+            <Link href="/login" className="px-3 py-1.5 rounded-md text-steel transition-colors hover:bg-white/40">
+              Sign up to save
+            </Link>
+          </div>
+
+          {/* Mobile: hamburger toggle */}
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Toggle menu"
+            className="sm:hidden w-9 h-9 flex items-center justify-center rounded-md hover:bg-white/40 transition-colors"
           >
-            How It Works?
-          </Link>
-          <Link href="/login" className="px-3 py-1.5 rounded-md text-steel transition-colors hover:bg-white/40">
-            Sign up to save
-          </Link>
+            <span className="font-mech text-lg leading-none">{menuOpen ? "✕" : "☰"}</span>
+          </button>
         </div>
+
+        {/* Mobile dropdown */}
+        {menuOpen && (
+          <div className="sm:hidden px-4 pb-4 space-y-1">
+            <Link
+              href="/how-it-works"
+              onClick={() => setMenuOpen(false)}
+              className="block px-3 py-2.5 rounded-md text-sm transition-colors hover:bg-white/40 hover:text-sage"
+            >
+              How It Works?
+            </Link>
+            <Link
+              href="/login"
+              onClick={() => setMenuOpen(false)}
+              className="block px-3 py-2.5 rounded-md text-sm text-steel transition-colors hover:bg-white/40"
+            >
+              Sign up to save
+            </Link>
+          </div>
+        )}
       </nav>
 
       <div className="max-w-2xl mx-auto px-6 py-4">
