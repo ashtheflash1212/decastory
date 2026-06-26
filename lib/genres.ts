@@ -6,7 +6,7 @@ export const GENRES = [
     axisLabel: "Spectacle",
     flavorGuidance:
       "Lean into dramatic, cinematic surroundings — collapsing structures, vehicles, crowds, environmental hazards the player must move through or use.",
-    cardBg: "#FBEAEA", // light red — Configuration Hub genre card background
+    cardBg: "#FADCCB", // light coral-red — Configuration Hub genre card background, distinct from Romance's pink
     climaxBg: "#FFFFFF", // white — keeps text crisp during the climax
     climaxBorder: "#4F9D6E", // green — complementary contrast to the red base
     deathThreshold: 6, // lower = recklessness ends the story in death more easily
@@ -52,4 +52,3 @@ export const GENRES = [
 export function getGenre(id: string) {
   return GENRES.find((g) => g.id === id) ?? GENRES[0];
 }
-
