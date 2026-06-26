@@ -35,7 +35,7 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center px-6">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm rounded-2xl border-2 border-surface2 bg-surface p-8 shadow-lg transition-all duration-300 hover:shadow-xl">
         <p className="font-mech text-xs uppercase tracking-[0.2em] text-cocoa mb-2">DecaStory</p>
         <h1 className="font-display text-4xl mb-8">
           {mode === "sign_in" ? "Welcome back." : "Begin your archive."}
@@ -49,7 +49,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-surface border-2 border-muted/50 rounded px-3 py-2.5 text-base outline-none focus:border-brass"
+              className="w-full bg-surface border-2 border-surface2 rounded-xl px-3 py-2.5 text-base outline-none transition-colors duration-200 focus:border-sage"
             />
           </div>
           <div>
@@ -60,7 +60,7 @@ export default function LoginPage() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-surface border-2 border-muted/50 rounded px-3 py-2.5 text-base outline-none focus:border-brass"
+              className="w-full bg-surface border-2 border-surface2 rounded-xl px-3 py-2.5 text-base outline-none transition-colors duration-200 focus:border-sage"
             />
           </div>
 
@@ -69,7 +69,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brass text-ink font-medium rounded px-3 py-2.5 text-base hover:opacity-90 disabled:opacity-50"
+            className="w-full bg-brass text-ink font-medium rounded-xl px-3 py-2.5 text-base transition-all duration-200 hover:scale-[1.02] hover:opacity-90 disabled:opacity-50 disabled:hover:scale-100"
           >
             {loading ? "Working..." : mode === "sign_in" ? "Sign in" : "Create account"}
           </button>
@@ -77,13 +77,16 @@ export default function LoginPage() {
 
         <button
           onClick={() => setMode(mode === "sign_in" ? "sign_up" : "sign_in")}
-          className="mt-4 text-sm text-muted hover:text-ink underline"
+          className="mt-4 text-sm text-muted hover:text-sage transition-colors underline"
         >
           {mode === "sign_in" ? "Need an account? Sign up" : "Have an account? Sign in"}
         </button>
 
         <div className="mt-6 pt-6 border-t border-surface2">
-          <Link href="/guest" className="text-sm text-steel hover:underline">
+          <Link
+            href="/guest"
+            className="text-sm text-steel hover:text-sage transition-colors hover:underline"
+          >
             Continue as guest — no account, nothing saved
           </Link>
         </div>

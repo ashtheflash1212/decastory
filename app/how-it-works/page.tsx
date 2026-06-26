@@ -8,7 +8,7 @@ export default async function HowItWorksPage() {
 
   return (
     <main className="min-h-screen">
-      <nav className="flex items-center justify-between px-6 py-4 border-b border-surface2">
+      <nav className="sticky top-0 z-50 bg-parchment flex items-center justify-between px-6 py-4 border-b border-surface2">
         <Link href={homeHref} className="font-mech text-xs uppercase tracking-[0.2em] text-cocoa">
           DecaStory
         </Link>

@@ -25,7 +25,7 @@ export default function TopNav({ email }: { email: string }) {
   }
 
   return (
-    <nav className="border-b border-surface2" style={{ backgroundColor: "#BFD8EC" }}>
+    <nav className="sticky top-0 z-50 border-b border-surface2" style={{ backgroundColor: "#BFD8EC" }}>
       <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
         <Link href="/" className="font-mech text-xs uppercase tracking-[0.2em] text-black">
           DecaStory
