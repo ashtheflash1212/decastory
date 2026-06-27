@@ -8,6 +8,7 @@ import {
   checkForDeath,
   computePhase,
   isFinalSlide,
+  isMissingWordSlide,
   maybeForceStatCheck,
   withGenreAxisDefault,
 } from "@/lib/ai/pacing";
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const isFinal = isFinalSlide(nextSlideNumber, story.slide_budget);
   const died = isFinal && checkForDeath(karma, getGenre(story.genre).deathThreshold);
   const forcedStatCheck = maybeForceStatCheck(karma, nextSlideNumber, story.slide_budget);
+  const missingWord = isMissingWordSlide(nextSlideNumber, story.slide_budget, story.genre);
 
   // Resolve which choice text was actually picked at each prior
   // slide, so the AI can callback to specific earlier decisions by
@@ -119,6 +121,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     seedPrompt: story.seed_prompt,
     forcedStatCheck,
     died,
+    missingWord,
   });
 
   const ai = await getAIProvider();
@@ -154,6 +157,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       choices,
       narrative_phase: phase,
       forced_stat_check: forcedStatCheck,
+      redacted_words: missingWord ? aiResponse.redacted_words ?? [] : null,
     })
     .select()
     .single();

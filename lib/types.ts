@@ -37,6 +37,7 @@ export interface SlideRecord {
   narrative_phase: NarrativePhase;
   forced_stat_check: ForcedStatCheck | null;
   chosen_choice_id: string | null;
+  redacted_words?: string[] | null;
   created_at: string;
 }
 
@@ -66,4 +67,5 @@ export interface AISlideResponse {
   story_title: string | null; // AI assigns this once, typically on slide 1 or final slide
   prose: string;
   choices: Choice[];
+  redacted_words?: string[];
 }

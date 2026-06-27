@@ -3,10 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { KarmaVector, SlideRecord, StoryRecord } from "@/lib/types";
+import { maskProse } from "@/lib/maskText";
 import ProgressRibbon from "./ProgressRibbon";
 import ChoiceCard from "./ChoiceCard";
 
 const COOLDOWN_SECONDS = 4;
+const REVEAL_PAUSE_MS = 2200; // longer pause after a missing-word slide reveals its hidden words
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export default function StoryCanvas({
   story: initialStory,
@@ -21,11 +27,8 @@ export default function StoryCanvas({
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState(false);
 
-  // Counts down once a second while > 0. This is what actually
-  // prevents the rapid-fire clicking that trips Gemini's per-minute
-  // rate limit — spacing requests out client-side rather than just
-  // showing an error after the fact.
   useEffect(() => {
     if (cooldown <= 0) return;
     const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
@@ -35,9 +38,25 @@ export default function StoryCanvas({
   const currentSlide = slides[slides.length - 1];
   const isComplete = story.status === "completed" || story.status === "failed";
   const isBusy = loading || cooldown > 0;
+  const hasHiddenWords = !!currentSlide.redacted_words?.length;
+
+  // Reset the reveal state whenever a new slide becomes current.
+  useEffect(() => {
+    setRevealed(false);
+  }, [currentSlide.id]);
 
   async function pickChoice(choiceId: string) {
-    setLoading(true);
+    // If this slide hid some words, reveal them in place first and
+    // hold for a beat before fetching the next slide — the pause IS
+    // the moment, not just a loading delay.
+    if (hasHiddenWords && !revealed) {
+      setRevealed(true);
+      setLoading(true);
+      await sleep(REVEAL_PAUSE_MS);
+    } else {
+      setLoading(true);
+    }
+
     setError(null);
     try {
       const res = await fetch(`/api/stories/${story.id}/slide`, {
@@ -83,6 +102,9 @@ export default function StoryCanvas({
     }
   }
 
+  const displayedProse =
+    hasHiddenWords && !revealed ? maskProse(currentSlide.prose, currentSlide.redacted_words) : currentSlide.prose;
+
   return (
     <div className="max-w-xl mx-auto">
       <ProgressRibbon current={currentSlide.slide_number} total={story.slide_budget} />
@@ -91,7 +113,15 @@ export default function StoryCanvas({
         <p className="font-mech text-[11px] uppercase tracking-wide text-muted mb-3">
           {currentSlide.narrative_phase}
         </p>
-        <p className="font-display text-[19px] leading-relaxed">{currentSlide.prose}</p>
+        <p className="font-display text-[19px] leading-relaxed">{displayedProse}</p>
+        {hasHiddenWords && !revealed && (
+          <p className="font-mech text-[11px] uppercase tracking-wide text-rust mt-2">
+            ▓ something's missing — choose anyway
+          </p>
+        )}
+        {hasHiddenWords && revealed && loading && (
+          <p className="font-mech text-[11px] uppercase tracking-wide text-steel mt-2">now you know...</p>
+        )}
 
         {error && <p className="text-rust text-sm mt-4">{error}</p>}
 

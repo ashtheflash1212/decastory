@@ -100,6 +100,7 @@ export class GeminiProvider implements AIProvider {
       choices: Array.isArray(parsed.choices)
         ? parsed.choices.map((c: any) => ({ ...c, text: cleanText(String(c.text ?? "")) }))
         : [],
+      redacted_words: Array.isArray(parsed.redacted_words) ? parsed.redacted_words.map(String) : undefined,
     };
   }
 }

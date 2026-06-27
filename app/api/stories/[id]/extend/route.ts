@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAIProvider } from "@/lib/ai/provider";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompts";
-import { computePhase, isFinalSlide, maybeForceStatCheck, withGenreAxisDefault, checkForDeath } from "@/lib/ai/pacing";
+import { computePhase, isFinalSlide, isMissingWordSlide, maybeForceStatCheck, withGenreAxisDefault, checkForDeath } from "@/lib/ai/pacing";
 import { Choice, KarmaVector, SlideRecord } from "@/lib/types";
 import { DAILY_SLIDE_LIMIT, getEasternDateString } from "@/lib/limits";
 import { getGenre } from "@/lib/genres";
@@ -79,6 +79,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const isFinal = isFinalSlide(nextSlideNumber, newBudget);
   const died = isFinal && checkForDeath(karma, getGenre(story.genre).deathThreshold);
   const forcedStatCheck = maybeForceStatCheck(karma, nextSlideNumber, newBudget);
+  const missingWord = isMissingWordSlide(nextSlideNumber, newBudget, story.genre);
 
   const historyForPrompt = slides.map((s) => ({
     slide_number: s.slide_number,
@@ -104,6 +105,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     forcedStatCheck,
     died,
     isContinuation: true,
+    missingWord,
   });
 
   const ai = await getAIProvider();
@@ -135,6 +137,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     choices,
     narrative_phase: phase,
     forced_stat_check: forcedStatCheck,
+    redacted_words: missingWord ? aiResponse.redacted_words ?? [] : null,
   });
 
   if (slideErr) {

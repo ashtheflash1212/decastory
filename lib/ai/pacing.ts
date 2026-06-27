@@ -25,6 +25,26 @@ export function canUsePowerupAt(slideNumber: number, totalBudget: number): boole
 }
 
 /**
+ * FEATURE: Suspense missing-word slides.
+ *
+ * Specific slides (only in Suspense stories) hide a few
+ * narratively significant words from the prose until AFTER the
+ * player commits to a choice — fitting the genre's "something's
+ * wrong, you don't know what yet" identity literally, not just
+ * thematically. The AI still writes full real prose as always;
+ * the masking is a presentation-layer reveal, not missing data.
+ */
+const MISSING_WORD_SLIDE: Record<number, number> = {
+  5: 1,
+  10: 2,
+  20: 4,
+};
+
+export function isMissingWordSlide(slideNumber: number, totalBudget: number, genreId: string): boolean {
+  return genreId === "suspense" && MISSING_WORD_SLIDE[totalBudget] === slideNumber;
+}
+
+/**
  * FEATURE 1: Deterministic Narrative Compression Algorithm
  *
  * The PRD specifies P = C / N driving phase changes, but never

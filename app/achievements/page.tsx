@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ACHIEVEMENTS, AchievementStats } from "@/lib/achievements";
+import { GENRES } from "@/lib/genres";
 import TopNav from "@/components/TopNav";
 
 export default async function AchievementsPage() {
@@ -9,12 +11,24 @@ export default async function AchievementsPage() {
 
   const { data: stories } = await supabase
     .from("stories")
-    .select("status, karma_vector")
+    .select("status, genre, karma_vector")
     .eq("user_id", userData.user.id);
 
   const all = stories ?? [];
   const totalStories = all.length;
+  const finished = all.filter((s) => s.status === "completed" || s.status === "failed");
   const deaths = all.filter((s) => s.status === "failed").length;
+
+  const genreFinished: Record<string, number> = {};
+  for (const g of GENRES) {
+    genreFinished[g.id] = finished.filter((s) => s.genre === g.id).length;
+  }
+
+  const stats: AchievementStats = {
+    totalFinished: finished.length,
+    deaths,
+    genreFinished,
+  };
 
   const sums = all.reduce(
     (acc, s) => {
@@ -27,9 +41,6 @@ export default async function AchievementsPage() {
     { prudence: 0, force: 0, subtlety: 0 }
   );
 
-  // Convert to a percentage of total engagement across the three
-  // axes — "35 points" means nothing on its own, but "70% Boldness"
-  // immediately communicates the shape of how someone plays.
   const totalMagnitude = Math.abs(sums.prudence) + Math.abs(sums.force) + Math.abs(sums.subtlety) || 1;
 
   const axes = [
@@ -39,6 +50,9 @@ export default async function AchievementsPage() {
   ].map((a) => ({ ...a, pct: Math.round((Math.abs(a.value) / totalMagnitude) * 100) }));
 
   const dominant = axes.reduce((a, b) => (b.pct > a.pct ? b : a));
+
+  const milestoneAchievements = ACHIEVEMENTS.filter((a) => a.id === "first_story" || a.id === "first_death");
+  const unlockedCount = ACHIEVEMENTS.filter((a) => a.unlocked(stats)).length;
 
   return (
     <main className="min-h-screen">
@@ -62,6 +76,67 @@ export default async function AchievementsPage() {
             </p>
           </section>
         </div>
+
+        <section className="rounded-2xl border-2 border-surface2 bg-surface p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted">Badges</h2>
+            <span className="font-mech text-xs text-muted">
+              {unlockedCount}/{ACHIEVEMENTS.length} unlocked
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+            {milestoneAchievements.map((a) => {
+              const unlocked = a.unlocked(stats);
+              return (
+                <div
+                  key={a.id}
+                  title={a.description}
+                  className={`rounded-xl border-2 px-3 py-4 text-center transition-all duration-200 ${
+                    unlocked ? "border-surface2" : "border-surface2 opacity-40"
+                  }`}
+                  style={unlocked ? { backgroundColor: `${a.color}22`, borderColor: a.color } : undefined}
+                >
+                  <div className="text-3xl mb-1" style={{ color: unlocked ? a.color : undefined }}>
+                    {unlocked ? a.icon : "🔒"}
+                  </div>
+                  <p className="font-mech text-[11px] uppercase tracking-wide">{a.label}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {GENRES.map((g) => {
+            const genreAchievements = ACHIEVEMENTS.filter((a) => a.id.startsWith(`${g.id}_`));
+            return (
+              <div key={g.id} className="mb-5">
+                <h3 className="font-mech text-[11px] uppercase tracking-wide text-muted mb-2">
+                  {g.label} ({genreFinished[g.id] ?? 0} finished)
+                </h3>
+                <div className="grid grid-cols-3 gap-3">
+                  {genreAchievements.map((a) => {
+                    const unlocked = a.unlocked(stats);
+                    return (
+                      <div
+                        key={a.id}
+                        title={a.description}
+                        className={`rounded-xl border-2 px-3 py-4 text-center transition-all duration-200 ${
+                          unlocked ? "" : "border-surface2 opacity-40"
+                        }`}
+                        style={unlocked ? { backgroundColor: `${a.color}22`, borderColor: a.color } : undefined}
+                      >
+                        <div className="text-2xl mb-1" style={{ color: unlocked ? a.color : undefined }}>
+                          {unlocked ? a.icon : "🔒"}
+                        </div>
+                        <p className="font-mech text-[10px] uppercase tracking-wide">{a.label}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </section>
 
         <section className="rounded-2xl border-2 border-surface2 bg-surface p-6">
           <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-2">What type of person are you?</h2>

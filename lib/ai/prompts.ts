@@ -51,7 +51,8 @@ HARD RULES (never break these):
 11. If the player's opening or choices mention a real, identifiable person — including public figures, content creators, or well-known usernames/handles you recognize — actively draw on what you know of their genuine public persona (their known personality, interests, sense of humor, catchphrases, public reputation) to make the story feel personalized and true to who they actually are. However: never present this as a literal factual account of that real person, and never write realistic invented dialogue and attribute it to them as if they actually said it in real life. The character should read as an affectionate, clearly fictionalized version built from their public persona — think fan-fiction tone, not biography.
 12. Use only plain ASCII punctuation — regular hyphens (-), straight quotes ("), and standard apostrophes ('). Do not use em-dashes, en-dashes, smart/curly quotes, or any other special punctuation characters.
 ${highIntensity ? `13. This story's opening was intense enough that the conclusion is GUARANTEED to be dramatic and high-stakes — never let the RESOLUTION slide be quiet, anticlimactic, or gentle, regardless of how the middle of the story went. The ending must feel as intense as how it began.` : ""}
-14. Respond ONLY with the JSON object matching the required schema. No prose outside the JSON, no markdown fences.`;
+14. On a slide flagged as a MISSING-WORD slide (you'll be told when), also return a "redacted_words" array of 2-4 EXACT substrings copied verbatim from your prose field. Pick narratively significant words or short phrases (a name, a key object, a crucial detail) whose absence makes the player uneasy — never pick filler words. These will be hidden from the player until after they choose, then revealed.
+15. Respond ONLY with the JSON object matching the required schema. No prose outside the JSON, no markdown fences.`;
 }
 
 interface HistoryItem {
@@ -71,6 +72,7 @@ export function buildUserPrompt(params: {
   forcedStatCheck: { axis: string; threshold: number; passed: boolean } | null;
   died?: boolean;
   isContinuation?: boolean;
+  missingWord?: boolean;
 }): string {
   const {
     slideNumber,
@@ -83,6 +85,7 @@ export function buildUserPrompt(params: {
     forcedStatCheck,
     died,
     isContinuation,
+    missingWord,
   } = params;
 
   const historyBlock = history.length
@@ -107,12 +110,16 @@ export function buildUserPrompt(params: {
     ? `\nTHE PLAYER HAS CHOSEN TO CONTINUE THIS STORY past its prior conclusion (the budget just grew). The previous final slide already resolved the story — pick back up in a way that makes narrative sense after that ending (time passing, a new development, an epilogue turning into a new chapter), rather than ignoring or contradicting how it ended.`
     : "";
 
+  const missingWordBlock = missingWord
+    ? `\nTHIS IS A MISSING-WORD SLIDE (system rule 14). Also return redacted_words per that rule.`
+    : "";
+
   return `${PHASE_GUIDANCE[phase]}
 
 Progress: slide ${slideNumber} of ${totalBudget} (P = ${(slideNumber / totalBudget).toFixed(2)})
 Current karma vector: ${JSON.stringify(karma)}
 ${lastChoiceText ? `The player just chose: "${lastChoiceText}"` : ""}
-${checkBlock}${deathBlock}${continuationBlock}
+${checkBlock}${deathBlock}${continuationBlock}${missingWordBlock}
 
 Story so far:
 ${historyBlock}
@@ -125,6 +132,7 @@ export const RESPONSE_JSON_SCHEMA = {
   properties: {
     story_title: { type: "string", nullable: true },
     prose: { type: "string" },
+    redacted_words: { type: "array", items: { type: "string" } },
     choices: {
       type: "array",
       items: {

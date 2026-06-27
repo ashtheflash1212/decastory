@@ -50,6 +50,7 @@ create table if not exists slides (
   choices jsonb not null default '[]'::jsonb, -- [{id,text,mechanic_cost:{prudence,force,subtlety}}]
   narrative_phase text not null check (narrative_phase in ('INCITING','RISING','CLIMAX','RESOLUTION')),
   forced_stat_check jsonb, -- {axis, threshold, passed} when a check fires on this slide
+  redacted_words jsonb, -- words hidden from the player until they choose, on Suspense missing-word slides
   chosen_choice_id text,
   created_at timestamptz not null default now(),
   unique (story_id, slide_number)

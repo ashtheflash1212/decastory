@@ -4,11 +4,17 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { GENRES, getGenre } from "@/lib/genres";
 import { Choice, KarmaVector } from "@/lib/types";
+import { maskProse } from "@/lib/maskText";
 import ProgressRibbon from "./ProgressRibbon";
 import ChoiceCard from "./ChoiceCard";
 
 const RATINGS = ["G", "PG", "R"] as const;
 const COOLDOWN_SECONDS = 4;
+const REVEAL_PAUSE_MS = 2200;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 type GuestSlide = {
   slide_number: number;
@@ -16,6 +22,7 @@ type GuestSlide = {
   choices: Choice[];
   narrative_phase: string;
   chosen_text?: string | null;
+  redacted_words?: string[] | null;
 };
 
 export default function GuestPlay() {
@@ -35,6 +42,7 @@ export default function GuestPlay() {
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -44,9 +52,22 @@ export default function GuestPlay() {
 
   const isBusy = loading || cooldown > 0;
   const currentSlide = slides[slides.length - 1];
+  const hasHiddenWords = !!currentSlide?.redacted_words?.length;
+
+  useEffect(() => {
+    setRevealed(false);
+  }, [currentSlide?.slide_number]);
 
   async function requestSlide(lastChoice: Choice | null, forceNullSeed: boolean = false) {
-    setLoading(true);
+    // If the current slide hid words and the player is now picking,
+    // reveal them in place and hold for a beat before fetching next.
+    if (lastChoice && hasHiddenWords && !revealed) {
+      setRevealed(true);
+      setLoading(true);
+      await sleep(REVEAL_PAUSE_MS);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     try {
       const res = await fetch("/api/guest/slide", {
@@ -294,7 +315,17 @@ export default function GuestPlay() {
             <p className="font-mech text-[11px] uppercase tracking-wide text-muted mb-3">
               {currentSlide.narrative_phase}
             </p>
-            <p className="font-display text-[19px] leading-relaxed">{currentSlide.prose}</p>
+            <p className="font-display text-[19px] leading-relaxed">
+              {hasHiddenWords && !revealed ? maskProse(currentSlide.prose, currentSlide.redacted_words) : currentSlide.prose}
+            </p>
+            {hasHiddenWords && !revealed && (
+              <p className="font-mech text-[11px] uppercase tracking-wide text-rust mt-2">
+                ▓ something's missing — choose anyway
+              </p>
+            )}
+            {hasHiddenWords && revealed && loading && (
+              <p className="font-mech text-[11px] uppercase tracking-wide text-steel mt-2">now you know...</p>
+            )}
 
             {error && <p className="text-rust text-sm mt-4">{error}</p>}
 
