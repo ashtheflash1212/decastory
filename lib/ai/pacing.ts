@@ -45,6 +45,26 @@ export function isMissingWordSlide(slideNumber: number, totalBudget: number, gen
 }
 
 /**
+ * FEATURE: Romance's dramatic finale.
+ *
+ * The last slide that still offers a choice (one before the
+ * no-choice RESOLUTION slide) is the true crossroads of the
+ * relationship. For Romance specifically, it drops from 3 options
+ * to exactly 2 — a real either/or, not a softened multiple choice.
+ * Costs slightly LESS than normal (2 choices is less output than 3),
+ * not more.
+ */
+export function isLastChoiceSlide(slideNumber: number, totalBudget: number): boolean {
+  return totalBudget > 1 && slideNumber === totalBudget - 1;
+}
+
+export function getChoiceCount(slideNumber: number, totalBudget: number, genreId: string): number {
+  if (isFinalSlide(slideNumber, totalBudget)) return 0;
+  if (genreId === "romance" && isLastChoiceSlide(slideNumber, totalBudget)) return 2;
+  return 3;
+}
+
+/**
  * FEATURE 1: Deterministic Narrative Compression Algorithm
  *
  * The PRD specifies P = C / N driving phase changes, but never

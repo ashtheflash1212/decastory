@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { detectHighIntensity } from "@/lib/ai/intensity";
 
+// Fantasy only: rewrites scale with story length, same logic as
+// every other budget-scaled mechanic in this app (powerup-style
+// allotment, not random).
+function initialRewrites(genre: string, slideBudget: number): number {
+  if (genre !== "fantasy") return 0;
+  if (slideBudget === 20) return 2;
+  if (slideBudget === 10) return 1;
+  return 0;
+}
+
 export async function POST(req: NextRequest) {
   const supabase = createClient();
   const { data: userData } = await supabase.auth.getUser();
@@ -29,6 +39,7 @@ export async function POST(req: NextRequest) {
       title: "Untitled Story",
       karma_vector: { prudence: 0, force: 0, subtlety: 0, genre_axis: 0 },
       high_intensity: detectHighIntensity(seed_prompt),
+      rewrites_remaining: initialRewrites(genre, slide_budget),
     })
     .select()
     .single();

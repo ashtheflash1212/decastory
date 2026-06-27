@@ -38,6 +38,7 @@ export interface SlideRecord {
   forced_stat_check: ForcedStatCheck | null;
   chosen_choice_id: string | null;
   redacted_words?: string[] | null;
+  choice_override_text?: string | null;
   created_at: string;
 }
 
@@ -50,6 +51,7 @@ export interface StoryRecord {
   slide_budget: 5 | 10 | 20;
   prose_length: "concise" | "standard";
   high_intensity: boolean;
+  rewrites_remaining: number;
   powerups_remaining: number;
   shield_active: boolean;
   status: "in_progress" | "completed" | "failed";

@@ -7,7 +7,9 @@ import {
   applyChoiceToKarma,
   checkForDeath,
   computePhase,
+  getChoiceCount,
   isFinalSlide,
+  isLastChoiceSlide,
   isMissingWordSlide,
   maybeForceStatCheck,
   withGenreAxisDefault,
@@ -15,6 +17,12 @@ import {
 import { Choice, KarmaVector, SlideRecord } from "@/lib/types";
 import { DAILY_SLIDE_LIMIT, getEasternDateString } from "@/lib/limits";
 import { getGenre } from "@/lib/genres";
+
+const REWRITE_WORD_LIMIT = 12;
+
+function wordCount(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -45,9 +53,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // fail open rather than breaking the app over a tracking bug
   }
 
-  const { chosen_choice_id }: { chosen_choice_id: string | null } = await req
+  const {
+    chosen_choice_id,
+    override_text,
+  }: { chosen_choice_id: string | null; override_text?: string | null } = await req
     .json()
-    .catch(() => ({ chosen_choice_id: null }));
+    .catch(() => ({ chosen_choice_id: null, override_text: null }));
 
   const { data: story, error: storyErr } = await supabase
     .from("stories")
@@ -74,6 +85,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   let karma: KarmaVector = withGenreAxisDefault(story.karma_vector);
   let lastChoiceText: string | null = null;
+  let rewritesRemaining = story.rewrites_remaining as number;
 
   // Resolve the previous slide's choice (skip on the very first call)
   if (lastSlide && chosen_choice_id) {
@@ -82,10 +94,30 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: "Invalid choice id." }, { status: 400 });
     }
 
-    karma = applyChoiceToKarma(karma, choice.mechanic_cost);
-    lastChoiceText = choice.text;
+    // The karma effect ALWAYS comes from the original choice's
+    // mechanic_cost, regardless of wording — only Fantasy stories
+    // with a charge remaining can supply custom wording, and it's
+    // capped tightly so it can't be used to smuggle in instructions.
+    const useOverride =
+      story.genre === "fantasy" &&
+      rewritesRemaining > 0 &&
+      lastSlide.narrative_phase !== "CLIMAX" &&
+      lastSlide.narrative_phase !== "RESOLUTION" &&
+      typeof override_text === "string" &&
+      override_text.trim().length > 0 &&
+      wordCount(override_text) <= REWRITE_WORD_LIMIT;
 
-    await supabase.from("slides").update({ chosen_choice_id }).eq("id", lastSlide.id);
+    karma = applyChoiceToKarma(karma, choice.mechanic_cost);
+    lastChoiceText = useOverride ? override_text!.trim() : choice.text;
+    if (useOverride) rewritesRemaining -= 1;
+
+    await supabase
+      .from("slides")
+      .update({
+        chosen_choice_id,
+        choice_override_text: useOverride ? override_text!.trim() : null,
+      })
+      .eq("id", lastSlide.id);
   }
 
   const nextSlideNumber = (lastSlide?.slide_number ?? 0) + 1;
@@ -94,14 +126,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const died = isFinal && checkForDeath(karma, getGenre(story.genre).deathThreshold);
   const forcedStatCheck = maybeForceStatCheck(karma, nextSlideNumber, story.slide_budget);
   const missingWord = isMissingWordSlide(nextSlideNumber, story.slide_budget, story.genre);
+  const dramaticFinale = story.genre === "romance" && isLastChoiceSlide(nextSlideNumber, story.slide_budget);
 
   // Resolve which choice text was actually picked at each prior
   // slide, so the AI can callback to specific earlier decisions by
   // name (see prompts.ts rule 8b) instead of only seeing raw prose.
+  // Prefer the player's own rewritten wording when present.
   const historyForPrompt = slides.map((s) => ({
     slide_number: s.slide_number,
     prose: s.prose,
-    chosen_text: s.choices?.find((c) => c.id === s.chosen_choice_id)?.text ?? null,
+    chosen_text: s.choice_override_text ?? s.choices?.find((c) => c.id === s.chosen_choice_id)?.text ?? null,
   }));
 
   const systemPrompt = buildSystemPrompt(
@@ -122,6 +156,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     forcedStatCheck,
     died,
     missingWord,
+    dramaticFinale,
   });
 
   const ai = await getAIProvider();
@@ -146,7 +181,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // intentionally ignored
   }
 
-  const choices: Choice[] = isFinal ? [] : aiResponse.choices.slice(0, 3); // hard cap at 3, schema rule #4
+  const choiceCount = getChoiceCount(nextSlideNumber, story.slide_budget, story.genre);
+  const choices: Choice[] = isFinal ? [] : aiResponse.choices.slice(0, choiceCount);
 
   const { data: newSlide, error: slideErr } = await supabase
     .from("slides")
@@ -166,7 +202,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: slideErr.message }, { status: 500 });
   }
 
-  const storyUpdate: Record<string, unknown> = { karma_vector: karma };
+  const storyUpdate: Record<string, unknown> = { karma_vector: karma, rewrites_remaining: rewritesRemaining };
   if (isFinal) {
     storyUpdate.status = died ? "failed" : "completed";
     storyUpdate.completed_at = new Date().toISOString();
@@ -174,5 +210,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
   await supabase.from("stories").update(storyUpdate).eq("id", story.id);
 
-  return NextResponse.json({ slide: newSlide, karma_vector: karma, is_final: isFinal, died });
+  return NextResponse.json({
+    slide: newSlide,
+    karma_vector: karma,
+    is_final: isFinal,
+    died,
+    rewrites_remaining: rewritesRemaining,
+  });
 }

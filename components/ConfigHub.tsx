@@ -79,7 +79,7 @@ export default function ConfigHub({
           You've reached today's limit of {slideLimit} story slides. This keeps things fair while we're on the free
           tier — come back tomorrow, or revisit any stories already in progress from the{" "}
           <a href="/vault" className="underline">
-            Chronicle Vault
+            The Vault
           </a>
           .
         </div>

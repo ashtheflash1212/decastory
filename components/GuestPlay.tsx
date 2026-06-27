@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { GENRES, getGenre } from "@/lib/genres";
 import { Choice, KarmaVector } from "@/lib/types";
@@ -11,9 +11,18 @@ import ChoiceCard from "./ChoiceCard";
 const RATINGS = ["G", "PG", "R"] as const;
 const COOLDOWN_SECONDS = 4;
 const REVEAL_PAUSE_MS = 2200;
+const ACTION_TIMER_SECONDS = 18;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Fantasy only, guest mode: same allotment logic as the
+// authenticated route's initialRewrites(), kept client-side only
+// since guest stories never touch the database.
+function initialRewrites(genreId: string, slideBudget: number): number {
+  if (genreId !== "fantasy") return 0;
+  return slideBudget === 10 ? 1 : 0; // guests only have 5/10, no 20-slide tier
 }
 
 type GuestSlide = {
@@ -43,6 +52,14 @@ export default function GuestPlay() {
   const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const [rewritesRemaining, setRewritesRemaining] = useState(0);
+  const [timerKey, setTimerKey] = useState(0);
+  const actionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fantasy rewrite: which choice (if any) has custom wording on
+  // the CURRENT slide. Resets whenever a new slide loads.
+  const [overrideChoiceId, setOverrideChoiceId] = useState<string | null>(null);
+  const [overrideText, setOverrideText] = useState<string | null>(null);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -53,12 +70,44 @@ export default function GuestPlay() {
   const isBusy = loading || cooldown > 0;
   const currentSlide = slides[slides.length - 1];
   const hasHiddenWords = !!currentSlide?.redacted_words?.length;
+  const isAction = genre === "action";
+  const canRewriteSlide =
+    genre === "fantasy" &&
+    rewritesRemaining > 0 &&
+    overrideChoiceId === null &&
+    currentSlide?.narrative_phase !== "CLIMAX" &&
+    currentSlide?.narrative_phase !== "RESOLUTION";
 
   useEffect(() => {
     setRevealed(false);
+    setOverrideChoiceId(null);
+    setOverrideText(null);
   }, [currentSlide?.slide_number]);
 
+  // Action only: hard countdown per slide, auto-picks the first
+  // option if time runs out.
+  useEffect(() => {
+    if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
+    if (!isAction || isComplete || !currentSlide || currentSlide.choices.length === 0) return;
+
+    setTimerKey((k) => k + 1);
+    actionTimeoutRef.current = setTimeout(() => {
+      const fallback = currentSlide.choices[0];
+      if (fallback) requestSlide(fallback);
+    }, ACTION_TIMER_SECONDS * 1000);
+
+    return () => {
+      if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSlide?.slide_number, isAction, isComplete]);
+
+
   async function requestSlide(lastChoice: Choice | null, forceNullSeed: boolean = false) {
+    if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
+
+    const usingOverride = lastChoice && overrideChoiceId === lastChoice.id ? overrideText : null;
+
     // If the current slide hid words and the player is now picking,
     // reveal them in place and hold for a beat before fetching next.
     if (lastChoice && hasHiddenWords && !revealed) {
@@ -82,16 +131,21 @@ export default function GuestPlay() {
           karma_vector: karma,
           history: slides.map((s) => ({ slide_number: s.slide_number, prose: s.prose, chosen_text: s.chosen_text })),
           last_choice: lastChoice,
+          override_text: usingOverride,
+          rewrites_remaining: rewritesRemaining,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
       setSlides((prev) => [
-        ...prev.map((s, i) => (i === prev.length - 1 ? { ...s, chosen_text: lastChoice?.text ?? null } : s)),
+        ...prev.map((s, i) =>
+          i === prev.length - 1 ? { ...s, chosen_text: usingOverride ?? lastChoice?.text ?? null } : s
+        ),
         data.slide,
       ]);
       setKarma(data.karma_vector);
+      if (typeof data.rewrites_remaining === "number") setRewritesRemaining(data.rewrites_remaining);
       if (data.is_final) {
         setIsComplete(true);
         setDied(!!data.died);
@@ -106,11 +160,13 @@ export default function GuestPlay() {
   }
 
   function startStory() {
+    setRewritesRemaining(initialRewrites(genre, budget));
     setPhase("playing");
     requestSlide(null, false);
   }
 
   function startStoryRandom() {
+    setRewritesRemaining(initialRewrites(genre, budget));
     setPhase("playing");
     requestSlide(null, true);
   }
@@ -121,6 +177,9 @@ export default function GuestPlay() {
     setStoryTitle(null);
     setIsComplete(false);
     setDied(false);
+    setRewritesRemaining(0);
+    setOverrideChoiceId(null);
+    setOverrideText(null);
     setError(null);
     setPhase("config");
   }
@@ -331,6 +390,20 @@ export default function GuestPlay() {
 
             {!isComplete && (
               <div className="mt-8 space-y-3">
+                {isAction && (
+                  <div key={timerKey} className="h-2 rounded-full bg-surface2 overflow-hidden mb-2">
+                    <div
+                      className="h-full bg-rust"
+                      style={{ animation: `decastory-countdown ${ACTION_TIMER_SECONDS}s linear forwards` }}
+                    />
+                  </div>
+                )}
+                {canRewriteSlide && (
+                  <p className="font-mech text-[11px] uppercase tracking-wide text-mystic mb-1">
+                    ✎ {rewritesRemaining} rewrite{rewritesRemaining === 1 ? "" : "s"} left — click the pencil on
+                    any choice to put it in your own words
+                  </p>
+                )}
                 {currentSlide.choices.map((choice, i) => (
                   <ChoiceCard
                     key={choice.id}
@@ -338,7 +411,13 @@ export default function GuestPlay() {
                     index={i}
                     genre={genre}
                     phase={currentSlide.narrative_phase}
+                    overrideText={overrideChoiceId === choice.id ? overrideText : null}
+                    canRewrite={canRewriteSlide}
                     onSelect={() => requestSlide(choice)}
+                    onRewrite={(text) => {
+                      setOverrideChoiceId(choice.id);
+                      setOverrideText(text);
+                    }}
                     disabled={isBusy}
                   />
                 ))}
@@ -360,7 +439,7 @@ export default function GuestPlay() {
                   <Link href="/login" className="text-steel underline">
                     Sign up
                   </Link>{" "}
-                  to keep future ones in your Chronicle Vault — and continue them later.
+                  to keep future ones in The Vault — and continue them later.
                 </p>
                 <button
                   onClick={resetToConfig}

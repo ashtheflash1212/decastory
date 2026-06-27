@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { KarmaVector, SlideRecord, StoryRecord } from "@/lib/types";
 import { maskProse } from "@/lib/maskText";
@@ -9,6 +9,7 @@ import ChoiceCard from "./ChoiceCard";
 
 const COOLDOWN_SECONDS = 4;
 const REVEAL_PAUSE_MS = 2200; // longer pause after a missing-word slide reveals its hidden words
+const ACTION_TIMER_SECONDS = 18; // Action only: "no time to think" - literal countdown per choice
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -28,6 +29,14 @@ export default function StoryCanvas({
   const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const [timerKey, setTimerKey] = useState(0);
+  const actionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fantasy rewrite: which choice (if any) has been given custom
+  // wording on the CURRENT slide, and what that wording is. Resets
+  // whenever a new slide loads.
+  const [overrideChoiceId, setOverrideChoiceId] = useState<string | null>(null);
+  const [overrideText, setOverrideText] = useState<string | null>(null);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -39,13 +48,43 @@ export default function StoryCanvas({
   const isComplete = story.status === "completed" || story.status === "failed";
   const isBusy = loading || cooldown > 0;
   const hasHiddenWords = !!currentSlide.redacted_words?.length;
+  const isAction = story.genre === "action";
+  const canRewriteSlide =
+    story.genre === "fantasy" &&
+    story.rewrites_remaining > 0 &&
+    overrideChoiceId === null &&
+    currentSlide.narrative_phase !== "CLIMAX" &&
+    currentSlide.narrative_phase !== "RESOLUTION";
 
-  // Reset the reveal state whenever a new slide becomes current.
+  // Reset per-slide state whenever a new slide becomes current.
   useEffect(() => {
     setRevealed(false);
+    setOverrideChoiceId(null);
+    setOverrideText(null);
   }, [currentSlide.id]);
 
+  // Action only: a hard countdown per slide. Running out auto-picks
+  // the first option rather than leaving the player stuck — fits
+  // the genre's "no time to think" identity literally.
+  useEffect(() => {
+    if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
+    if (!isAction || isComplete || currentSlide.choices.length === 0) return;
+
+    setTimerKey((k) => k + 1);
+    actionTimeoutRef.current = setTimeout(() => {
+      const fallback = currentSlide.choices[0];
+      if (fallback) pickChoice(fallback.id);
+    }, ACTION_TIMER_SECONDS * 1000);
+
+    return () => {
+      if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSlide.id, isAction, isComplete]);
+
   async function pickChoice(choiceId: string) {
+    if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
+
     // If this slide hid some words, reveal them in place first and
     // hold for a beat before fetching the next slide — the pause IS
     // the moment, not just a loading delay.
@@ -62,19 +101,31 @@ export default function StoryCanvas({
       const res = await fetch(`/api/stories/${story.id}/slide`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chosen_choice_id: choiceId }),
+        body: JSON.stringify({
+          chosen_choice_id: choiceId,
+          override_text: overrideChoiceId === choiceId ? overrideText : null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
       setSlides((prev) => [
-        ...prev.map((s) => (s.id === currentSlide.id ? { ...s, chosen_choice_id: choiceId } : s)),
+        ...prev.map((s) =>
+          s.id === currentSlide.id
+            ? {
+                ...s,
+                chosen_choice_id: choiceId,
+                choice_override_text: overrideChoiceId === choiceId ? overrideText : null,
+              }
+            : s
+        ),
         data.slide,
       ]);
       setStory((prev) => ({
         ...prev,
         karma_vector: data.karma_vector as KarmaVector,
         status: data.is_final ? (data.died ? "failed" : "completed") : prev.status,
+        rewrites_remaining: data.rewrites_remaining ?? prev.rewrites_remaining,
       }));
     } catch (e: any) {
       setError(e.message ?? "The story engine stumbled. Try again.");
@@ -127,6 +178,20 @@ export default function StoryCanvas({
 
         {!isComplete && (
           <div className="mt-8 space-y-3">
+            {isAction && (
+              <div key={timerKey} className="h-2 rounded-full bg-surface2 overflow-hidden mb-2">
+                <div
+                  className="h-full bg-rust"
+                  style={{ animation: `decastory-countdown ${ACTION_TIMER_SECONDS}s linear forwards` }}
+                />
+              </div>
+            )}
+            {canRewriteSlide && (
+              <p className="font-mech text-[11px] uppercase tracking-wide text-mystic mb-1">
+                ✎ {story.rewrites_remaining} rewrite{story.rewrites_remaining === 1 ? "" : "s"} left — click the
+                pencil on any choice to put it in your own words
+              </p>
+            )}
             {currentSlide.choices.map((choice, i) => (
               <ChoiceCard
                 key={choice.id}
@@ -134,7 +199,13 @@ export default function StoryCanvas({
                 index={i}
                 genre={story.genre}
                 phase={currentSlide.narrative_phase}
+                overrideText={overrideChoiceId === choice.id ? overrideText : null}
+                canRewrite={canRewriteSlide}
                 onSelect={() => pickChoice(choice.id)}
+                onRewrite={(text) => {
+                  setOverrideChoiceId(choice.id);
+                  setOverrideText(text);
+                }}
                 disabled={isBusy}
               />
             ))}
@@ -171,15 +242,15 @@ export default function StoryCanvas({
             </div>
             {story.status === "completed" && (
               <p className="text-sm text-muted mt-3">
-                Want more? Head back to the{" "}
+                Want more? Head back to{" "}
                 <a href="/vault" className="text-steel underline">
-                  Chronicle Vault
+                  The Vault
                 </a>{" "}
                 and click 📖 on this story to continue it.
               </p>
             )}
             <a href="/vault" className="inline-block mt-4 text-sm text-muted hover:text-cocoa underline">
-              Return to Chronicle Vault
+              Return to The Vault
             </a>
           </div>
         )}

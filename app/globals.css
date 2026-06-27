@@ -34,6 +34,15 @@ body {
   background: theme("colors.rust");
 }
 
+@keyframes decastory-countdown {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;

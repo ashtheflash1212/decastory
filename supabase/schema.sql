@@ -27,6 +27,7 @@ create table if not exists stories (
   is_public boolean not null default false,
   is_favorite boolean not null default false,
   high_intensity boolean not null default false,
+  rewrites_remaining int not null default 0, -- Fantasy only: how many times the player can undo their last choice
   powerups_remaining int not null default 0,
   shield_active boolean not null default false,
   created_at timestamptz not null default now(),
@@ -51,6 +52,7 @@ create table if not exists slides (
   narrative_phase text not null check (narrative_phase in ('INCITING','RISING','CLIMAX','RESOLUTION')),
   forced_stat_check jsonb, -- {axis, threshold, passed} when a check fires on this slide
   redacted_words jsonb, -- words hidden from the player until they choose, on Suspense missing-word slides
+  choice_override_text text, -- Fantasy only: player's own rewritten wording for whichever choice they picked
   chosen_choice_id text,
   created_at timestamptz not null default now(),
   unique (story_id, slide_number)

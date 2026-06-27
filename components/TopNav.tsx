@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 
 const LINKS = [
   { href: "/", label: "New Story" },
-  { href: "/vault", label: "Chronicle Vault" },
+  { href: "/vault", label: "The Vault" },
   { href: "/how-it-works", label: "How It Works?" },
   { href: "/timeline", label: "Timeline Tree" },
   { href: "/achievements", label: "Achievements" },

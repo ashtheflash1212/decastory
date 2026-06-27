@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAIProvider } from "@/lib/ai/provider";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai/prompts";
-import { applyChoiceToKarma, checkForDeath, computePhase, isFinalSlide, maybeForceStatCheck, withGenreAxisDefault } from "@/lib/ai/pacing";
+import { applyChoiceToKarma, checkForDeath, computePhase, getChoiceCount, isFinalSlide, isLastChoiceSlide, isMissingWordSlide, maybeForceStatCheck, withGenreAxisDefault } from "@/lib/ai/pacing";
 import { Choice, KarmaVector, MaturityRating } from "@/lib/types";
 import { getGenre } from "@/lib/genres";
 import { detectHighIntensity } from "@/lib/ai/intensity";
+
+const REWRITE_WORD_LIMIT = 12;
+
+function wordCount(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
 
 /**
  * Guest mode: identical AI generation + pacing logic as the
@@ -33,6 +39,8 @@ export async function POST(req: NextRequest) {
     karma_vector,
     history,
     last_choice,
+    override_text,
+    rewrites_remaining,
   }: {
     genre: string;
     maturity_rating: MaturityRating;
@@ -42,6 +50,8 @@ export async function POST(req: NextRequest) {
     karma_vector: KarmaVector;
     history: { slide_number: number; prose: string; chosen_text?: string | null }[];
     last_choice: Choice | null;
+    override_text?: string | null;
+    rewrites_remaining?: number;
   } = body;
 
   const proseLength: "concise" | "standard" = prose_length === "concise" ? "concise" : "standard";
@@ -54,9 +64,24 @@ export async function POST(req: NextRequest) {
 
   let karma: KarmaVector = withGenreAxisDefault(karma_vector ?? {});
   let lastChoiceText: string | null = null;
+  let rewritesAfter = rewrites_remaining ?? 0;
+
   if (last_choice) {
+    const actingSlideNumber = priorSlides.length ? priorSlides[priorSlides.length - 1].slide_number : 0;
+    const actingPhase = actingSlideNumber > 0 ? computePhase(actingSlideNumber, slide_budget) : null;
+
+    const useOverride =
+      genre === "fantasy" &&
+      (rewrites_remaining ?? 0) > 0 &&
+      actingPhase !== "CLIMAX" &&
+      actingPhase !== "RESOLUTION" &&
+      typeof override_text === "string" &&
+      override_text.trim().length > 0 &&
+      wordCount(override_text) <= REWRITE_WORD_LIMIT;
+
     karma = applyChoiceToKarma(karma, last_choice.mechanic_cost);
-    lastChoiceText = last_choice.text;
+    lastChoiceText = useOverride ? override_text!.trim() : last_choice.text;
+    if (useOverride) rewritesAfter -= 1;
   }
 
   const nextSlideNumber = priorSlides.length ? priorSlides[priorSlides.length - 1].slide_number + 1 : 1;
@@ -65,6 +90,8 @@ export async function POST(req: NextRequest) {
   const died = isFinal && checkForDeath(karma, getGenre(genre).deathThreshold);
   const highIntensity = detectHighIntensity(seed_prompt);
   const forcedStatCheck = maybeForceStatCheck(karma, nextSlideNumber, slide_budget);
+  const missingWord = isMissingWordSlide(nextSlideNumber, slide_budget, genre);
+  const dramaticFinale = genre === "romance" && isLastChoiceSlide(nextSlideNumber, slide_budget);
 
   const systemPrompt = buildSystemPrompt(genre, maturity_rating, slide_budget, proseLength, highIntensity);
   const userPrompt = buildUserPrompt({
@@ -77,6 +104,8 @@ export async function POST(req: NextRequest) {
     seedPrompt: seed_prompt ?? null,
     forcedStatCheck,
     died,
+    missingWord,
+    dramaticFinale,
   });
 
   const ai = await getAIProvider();
@@ -99,7 +128,8 @@ export async function POST(req: NextRequest) {
     // best-effort, never block the story over this
   }
 
-  const choices: Choice[] = isFinal ? [] : aiResponse.choices.slice(0, 3);
+  const choiceCount = getChoiceCount(nextSlideNumber, slide_budget, genre);
+  const choices: Choice[] = isFinal ? [] : aiResponse.choices.slice(0, choiceCount);
 
   return NextResponse.json({
     slide: {
@@ -108,10 +138,12 @@ export async function POST(req: NextRequest) {
       choices,
       narrative_phase: phase,
       forced_stat_check: forcedStatCheck,
+      redacted_words: missingWord ? aiResponse.redacted_words ?? [] : null,
     },
     karma_vector: karma,
     is_final: isFinal,
     died,
+    rewrites_remaining: rewritesAfter,
     story_title: isFinal ? aiResponse.story_title : null,
   });
 }

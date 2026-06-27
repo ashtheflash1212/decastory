@@ -73,6 +73,7 @@ export function buildUserPrompt(params: {
   died?: boolean;
   isContinuation?: boolean;
   missingWord?: boolean;
+  dramaticFinale?: boolean;
 }): string {
   const {
     slideNumber,
@@ -86,6 +87,7 @@ export function buildUserPrompt(params: {
     died,
     isContinuation,
     missingWord,
+    dramaticFinale,
   } = params;
 
   const historyBlock = history.length
@@ -114,12 +116,16 @@ export function buildUserPrompt(params: {
     ? `\nTHIS IS A MISSING-WORD SLIDE (system rule 14). Also return redacted_words per that rule.`
     : "";
 
+  const finaleBlock = dramaticFinale
+    ? `\nTHIS IS THE FINAL DECISION of the relationship — return EXACTLY 2 choices instead of 3, each weighty and irreversible-feeling, a true either/or with no easy middle ground.`
+    : "";
+
   return `${PHASE_GUIDANCE[phase]}
 
 Progress: slide ${slideNumber} of ${totalBudget} (P = ${(slideNumber / totalBudget).toFixed(2)})
 Current karma vector: ${JSON.stringify(karma)}
 ${lastChoiceText ? `The player just chose: "${lastChoiceText}"` : ""}
-${checkBlock}${deathBlock}${continuationBlock}${missingWordBlock}
+${checkBlock}${deathBlock}${continuationBlock}${missingWordBlock}${finaleBlock}
 
 Story so far:
 ${historyBlock}
