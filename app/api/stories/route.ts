@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { genre, maturity_rating, slide_budget, seed_prompt, prose_length } = body;
+  const { genre, maturity_rating, slide_budget, seed_prompt, prose_length, focus_prompt } = body;
   const proseLength = ["concise", "standard"].includes(prose_length) ? prose_length : "standard";
 
   if (!genre || !["G", "PG", "R"].includes(maturity_rating) || ![5, 10, 20].includes(slide_budget)) {
@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
       slide_budget,
       prose_length: proseLength,
       seed_prompt: seed_prompt || null,
+      focus_prompt: focus_prompt?.trim() || null,
       title: "Untitled Story",
       karma_vector: { prudence: 0, force: 0, subtlety: 0, genre_axis: 0 },
       high_intensity: detectHighIntensity(seed_prompt),

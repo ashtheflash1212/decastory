@@ -28,16 +28,26 @@ export function buildSystemPrompt(
   rating: MaturityRating,
   totalBudget: number,
   proseLength: "concise" | "standard" = "standard",
-  highIntensity: boolean = false
+  highIntensity: boolean = false,
+  focusPrompt?: string | null
 ): string {
   const genre = getGenre(genreId);
 
   return `You are the narrative engine for Project DecaStory, a finite, mechanically-constrained text adventure.
 
 HARD RULES (never break these):
-1. The story MUST conclude exactly at slide ${totalBudget}. Never pad, never wrap up early.
+${
+  focusPrompt
+    ? `0. ABSOLUTE PRIORITY - SUBJECT LOCK: The player has specified this story must be entirely about: "${focusPrompt}". This is a hard constraint, not a soft preference. Every slide's prose and every choice must stay literally and concretely about this subject. Do NOT introduce unrelated environmental disasters, structural collapses, cracking walls, falling debris, fires, explosions, or any other generic genre-spectacle event that is not a direct, natural part of "${focusPrompt}" itself. If the genre flavor described in rule 2b would normally suggest something unrelated, IGNORE that specific suggestion for this story. Instead, express the genre's intensity FROM WITHIN the stated subject alone — for example, an Action story about a 1-on-1 basketball game should derive its tension from physical contact, the score, exhaustion, crowd noise, and competitive stakes inside the game itself, never from the building, court, or environment failing around it. Re-read this rule before writing every single slide; it overrides rule 2b whenever the two would conflict.
+`
+    : ""
+}1. The story MUST conclude exactly at slide ${totalBudget}. Never pad, never wrap up early.
 2. Genre: ${genre.label}. Content rating: ${rating} — ${MATURITY_GUIDANCE[rating]}
-2b. Genre flavor: ${genre.flavorGuidance} Aim to bring this element into most slides where it plausibly fits — it should feel like a recurring texture of this story's world, not a one-time mention.
+2b. Genre flavor: ${genre.flavorGuidance} Aim to bring this element into most slides where it plausibly fits — it should feel like a recurring texture of this story's world, not a one-time mention.${
+    focusPrompt
+      ? " EXCEPTION: per rule 0 above, skip any specific flavor detail that would pull away from the player's stated subject — express genre intensity through that subject instead, not through unrelated spectacle."
+      : ""
+  }
 3. ${PROSE_LENGTH_GUIDANCE[proseLength]} Never exceed this.
 4. Except on the final slide, you MUST return exactly 3 choices, each a single concrete action (10-16 words).
 5. Choices must be HIGH-STAKES and meaningfully diverge the story. Never offer three flavors of the same outcome dressed differently — each choice should plausibly lead to a noticeably different next scene, with real consequences (gains, losses, irreversible changes, new dangers or allies). Avoid safe, low-impact options; every choice should feel like it actually matters.
@@ -74,6 +84,7 @@ export function buildUserPrompt(params: {
   isContinuation?: boolean;
   missingWord?: boolean;
   dramaticFinale?: boolean;
+  focusPrompt?: string | null;
 }): string {
   const {
     slideNumber,
@@ -88,6 +99,7 @@ export function buildUserPrompt(params: {
     isContinuation,
     missingWord,
     dramaticFinale,
+    focusPrompt,
   } = params;
 
   const historyBlock = history.length
@@ -120,6 +132,10 @@ export function buildUserPrompt(params: {
     ? `\nTHIS IS THE FINAL DECISION of the relationship — return EXACTLY 2 choices instead of 3, each weighty and irreversible-feeling, a true either/or with no easy middle ground.`
     : "";
 
+  const focusReminderBlock = focusPrompt
+    ? `\nREMINDER (system rule 0): this story must stay entirely about "${focusPrompt}". Do not introduce unrelated disasters or environmental spectacle this slide — keep the tension coming from within that subject.`
+    : "";
+
   return `${PHASE_GUIDANCE[phase]}
 
 Progress: slide ${slideNumber} of ${totalBudget} (P = ${(slideNumber / totalBudget).toFixed(2)})
@@ -129,7 +145,7 @@ ${checkBlock}${deathBlock}${continuationBlock}${missingWordBlock}${finaleBlock}
 
 Story so far:
 ${historyBlock}
-
+${focusReminderBlock}
 Generate slide ${slideNumber} now, following the JSON schema exactly.`;
 }
 

@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
     slide_budget,
     prose_length,
     seed_prompt,
+    focus_prompt,
     karma_vector,
     history,
     last_choice,
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
     slide_budget: 5 | 10;
     prose_length?: "concise" | "standard";
     seed_prompt: string | null;
+    focus_prompt?: string | null;
     karma_vector: KarmaVector;
     history: { slide_number: number; prose: string; chosen_text?: string | null }[];
     last_choice: Choice | null;
@@ -93,7 +95,7 @@ export async function POST(req: NextRequest) {
   const missingWord = isMissingWordSlide(nextSlideNumber, slide_budget, genre);
   const dramaticFinale = genre === "romance" && isLastChoiceSlide(nextSlideNumber, slide_budget);
 
-  const systemPrompt = buildSystemPrompt(genre, maturity_rating, slide_budget, proseLength, highIntensity);
+  const systemPrompt = buildSystemPrompt(genre, maturity_rating, slide_budget, proseLength, highIntensity, focus_prompt);
   const userPrompt = buildUserPrompt({
     slideNumber: nextSlideNumber,
     totalBudget: slide_budget,
@@ -106,6 +108,7 @@ export async function POST(req: NextRequest) {
     died,
     missingWord,
     dramaticFinale,
+    focusPrompt: focus_prompt,
   });
 
   const ai = await getAIProvider();

@@ -85,7 +85,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const historyForPrompt = slides.map((s) => ({
     slide_number: s.slide_number,
     prose: s.prose,
-    chosen_text: s.choices?.find((c: Choice) => c.id === s.chosen_choice_id)?.text ?? null,
+    chosen_text: s.choice_override_text ?? s.choices?.find((c: Choice) => c.id === s.chosen_choice_id)?.text ?? null,
   }));
 
   const systemPrompt = buildSystemPrompt(
@@ -93,7 +93,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     story.maturity_rating,
     newBudget,
     story.prose_length,
-    story.high_intensity
+    story.high_intensity,
+    story.focus_prompt
   );
   const userPrompt = buildUserPrompt({
     slideNumber: nextSlideNumber,
@@ -108,6 +109,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     isContinuation: true,
     missingWord,
     dramaticFinale,
+    focusPrompt: story.focus_prompt,
   });
 
   const ai = await getAIProvider();

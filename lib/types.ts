@@ -52,6 +52,7 @@ export interface StoryRecord {
   prose_length: "concise" | "standard";
   high_intensity: boolean;
   rewrites_remaining: number;
+  focus_prompt: string | null;
   powerups_remaining: number;
   shield_active: boolean;
   status: "in_progress" | "completed" | "failed";

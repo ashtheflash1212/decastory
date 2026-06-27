@@ -143,7 +143,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     story.maturity_rating,
     story.slide_budget,
     story.prose_length,
-    story.high_intensity
+    story.high_intensity,
+    story.focus_prompt
   );
   const userPrompt = buildUserPrompt({
     slideNumber: nextSlideNumber,
@@ -157,6 +158,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     died,
     missingWord,
     dramaticFinale,
+    focusPrompt: story.focus_prompt,
   });
 
   const ai = await getAIProvider();

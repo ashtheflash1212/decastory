@@ -19,6 +19,7 @@ export default function ConfigHub({
   const [budget, setBudget] = useState<5 | 10 | 20>(5);
   const [proseLength, setProseLength] = useState<"concise" | "standard">("standard");
   const [seed, setSeed] = useState("");
+  const [focusPrompt, setFocusPrompt] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +39,7 @@ export default function ConfigHub({
           slide_budget: budget,
           prose_length: proseLength,
           seed_prompt: useRandom ? null : seed.trim() || null,
+          focus_prompt: focusPrompt.trim() || null,
         }),
       });
       const createData = await createRes.json();
@@ -93,10 +95,18 @@ export default function ConfigHub({
               key={g.id}
               onClick={() => setGenre(g.id)}
               style={{ backgroundColor: g.cardBg }}
-              className={`text-left rounded-xl border-2 px-5 py-6 transition-all duration-200 hover:scale-[1.03] hover:shadow-md ${
+              className={`relative text-left rounded-xl border-2 px-5 py-6 transition-all duration-200 hover:scale-[1.03] hover:shadow-md ${
                 genre === g.id ? "border-brass" : "border-surface2 hover:border-sage"
               }`}
             >
+              {genre === g.id && (
+                <span
+                  className="absolute top-3 right-3 w-6 h-6 rounded-full border-2 border-sage flex items-center justify-center text-sage text-xs"
+                  style={{ backgroundColor: "#F0FFF0" }}
+                >
+                  ✓
+                </span>
+              )}
               <div className="font-display text-2xl mb-1">{g.label}</div>
               <div className="text-sm text-ink/70 leading-snug min-h-[2.5rem]">{g.blurb}</div>
             </button>
@@ -183,6 +193,21 @@ export default function ConfigHub({
           onChange={(e) => setSeed(e.target.value)}
           placeholder='e.g. "I wake up in an abandoned underwater research station with an alarm sounding."'
           className="w-full bg-surface border-2 border-surface2 rounded-xl px-4 py-3 text-base outline-none transition-colors focus:border-sage resize-none h-24"
+        />
+      </section>
+
+      <section className="rounded-2xl border-2 border-surface2 bg-surface p-6 mb-6">
+        <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-4">
+          What the story should focus on <span className="text-muted/70">(optional)</span>
+        </h2>
+        <p className="text-sm text-muted mb-3">
+          Keeps the AI on your actual subject instead of drifting into generic genre spectacle.
+        </p>
+        <textarea
+          value={focusPrompt}
+          onChange={(e) => setFocusPrompt(e.target.value)}
+          placeholder='e.g. "Keep this entirely about an intense 1-on-1 basketball game — no unrelated disasters."'
+          className="w-full bg-surface border-2 border-surface2 rounded-xl px-4 py-3 text-base outline-none transition-colors focus:border-sage resize-none h-20"
         />
       </section>
 
