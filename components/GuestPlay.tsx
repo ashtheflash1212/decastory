@@ -274,7 +274,7 @@ export default function GuestPlay() {
                     onClick={() => setBudget(n as 5 | 10)}
                     className={`px-2 py-2.5 rounded-xl border-2 font-mech text-sm transition-all duration-200 hover:scale-105 ${
                       budget === n
-                        ? "bg-brass border-brass text-ink"
+                        ? "bg-[#F0FFF0] border-sage text-ink"
                         : "bg-surface border-surface2 text-ink hover:border-sage"
                     }`}
                   >
@@ -295,7 +295,7 @@ export default function GuestPlay() {
                     onClick={() => setRating(r)}
                     className={`w-11 h-11 rounded-full border-2 font-mech text-sm transition-all duration-200 hover:scale-110 ${
                       rating === r
-                        ? "bg-brass border-brass text-ink"
+                        ? "bg-[#F0FFF0] border-sage text-ink"
                         : "bg-surface border-surface2 text-ink hover:border-sage"
                     }`}
                   >
@@ -321,7 +321,7 @@ export default function GuestPlay() {
                     onClick={() => setProseLength(p)}
                     className={`px-5 py-2 rounded-full border-2 font-mech text-sm capitalize transition-all duration-200 hover:scale-105 ${
                       proseLength === p
-                        ? "bg-brass border-brass text-ink"
+                        ? "bg-[#F0FFF0] border-sage text-ink"
                         : "bg-surface border-surface2 text-ink hover:border-sage"
                     }`}
                   >
