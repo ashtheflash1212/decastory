@@ -63,7 +63,7 @@ export default function ConfigHub({
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <p className="font-mech text-xs uppercase tracking-[0.25em] text-cocoa mb-2">Configuration Hub</p>
       <div className="flex items-end justify-between gap-4 mb-2 flex-wrap">
         <h1 className="font-display text-5xl sm:text-6xl leading-tight">Choose your story.</h1>
@@ -74,7 +74,7 @@ export default function ConfigHub({
           {slidesToday}/{slideLimit} slides today
         </span>
       </div>
-      <div className="mb-12" />
+      <div className="mb-8 sm:mb-12" />
 
       {atLimit && (
         <div className="bg-surface2 text-ink text-sm rounded px-4 py-3 mb-6">
@@ -87,7 +87,7 @@ export default function ConfigHub({
         </div>
       )}
 
-      <section className="rounded-2xl border-2 border-surface2 bg-surface p-6 mb-6">
+      <section className="rounded-2xl border-2 border-surface2 bg-surface p-4 sm:p-6 mb-6">
         <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-4">Genre</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {GENRES.map((g) => (
@@ -95,27 +95,30 @@ export default function ConfigHub({
               key={g.id}
               onClick={() => setGenre(g.id)}
               style={{ backgroundColor: g.cardBg }}
-              className={`relative text-left rounded-xl border-2 px-5 py-6 transition-all duration-200 hover:scale-[1.03] hover:shadow-md ${
+              className={`relative text-left rounded-xl border-2 px-4 py-4 sm:px-5 sm:py-6 transition-all duration-200 hover:scale-[1.03] hover:shadow-md ${
                 genre === g.id ? "border-brass" : "border-surface2 hover:border-sage"
               }`}
             >
               {genre === g.id && (
                 <span
-                  className="absolute top-3 right-3 w-6 h-6 rounded-full border-2 border-sage flex items-center justify-center text-sage text-xs"
+                  className="absolute top-2 right-2 sm:top-3 sm:right-3 w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-sage flex items-center justify-center text-sage text-[10px] sm:text-xs"
                   style={{ backgroundColor: "#F0FFF0" }}
                 >
                   ✓
                 </span>
               )}
-              <div className="font-display text-2xl mb-1">{g.label}</div>
-              <div className="text-sm text-ink/70 leading-snug min-h-[2.5rem]">{g.blurb}</div>
+              <div className="font-display text-xl sm:text-2xl mb-1">{g.label}</div>
+              <div className="text-sm text-ink/70 leading-snug min-h-[1.25rem] sm:min-h-[2.5rem]">
+                <span className="sm:hidden">{g.mobileBlurb}</span>
+                <span className="hidden sm:inline">{g.blurb}</span>
+              </div>
             </button>
           ))}
         </div>
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <section className="rounded-2xl border-2 border-surface2 bg-surface p-6">
+        <section className="rounded-2xl border-2 border-surface2 bg-surface p-4 sm:p-6">
           <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-4">Slide Pacing Budget</h2>
           <div className="grid grid-cols-3 gap-2">
             {[5, 10, 20].map((n) => (
@@ -137,7 +140,7 @@ export default function ConfigHub({
           </p>
         </section>
 
-        <section className="rounded-2xl border-2 border-surface2 bg-surface p-6">
+        <section className="rounded-2xl border-2 border-surface2 bg-surface p-4 sm:p-6">
           <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-4">Content Maturity</h2>
           <div className="flex gap-3">
             {RATINGS.map((r) => (
@@ -163,7 +166,7 @@ export default function ConfigHub({
           </p>
         </section>
 
-        <section className="rounded-2xl border-2 border-surface2 bg-surface p-6">
+        <section className="rounded-2xl border-2 border-surface2 bg-surface p-4 sm:p-6">
           <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-4">Text Length</h2>
           <div className="flex gap-3">
             {(["standard", "concise"] as const).map((p) => (
@@ -186,7 +189,7 @@ export default function ConfigHub({
         </section>
       </div>
 
-      <section className="rounded-2xl border-2 border-surface2 bg-surface p-6 mb-6">
+      <section className="rounded-2xl border-2 border-surface2 bg-surface p-4 sm:p-6 mb-6">
         <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-4">Opening</h2>
         <textarea
           value={seed}
@@ -196,12 +199,12 @@ export default function ConfigHub({
         />
       </section>
 
-      <section className="rounded-2xl border-2 border-surface2 bg-surface p-6 mb-6">
+      <section className="rounded-2xl border-2 border-surface2 bg-surface p-4 sm:p-6 mb-6">
         <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-4">
           What the story should focus on <span className="text-muted/70">(optional)</span>
         </h2>
         <p className="text-sm text-muted mb-3">
-          Keeps the AI on your actual subject instead of drifting into generic genre spectacle.
+          Keeps the AI on-topic, not just on-genre.
         </p>
         <textarea
           value={focusPrompt}

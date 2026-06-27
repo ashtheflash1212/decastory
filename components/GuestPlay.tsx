@@ -243,11 +243,11 @@ export default function GuestPlay() {
       </div>
 
       {phase === "config" && (
-        <div className="max-w-5xl mx-auto px-6 pb-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-8 sm:pb-12">
           <p className="font-mech text-xs uppercase tracking-[0.25em] text-cocoa mb-2">Configuration Hub</p>
-          <h1 className="font-display text-5xl sm:text-6xl leading-tight mb-12">Choose your story.</h1>
+          <h1 className="font-display text-5xl sm:text-6xl leading-tight mb-8 sm:mb-12">Choose your story.</h1>
 
-          <section className="rounded-2xl border-2 border-surface2 bg-surface p-6 mb-6">
+          <section className="rounded-2xl border-2 border-surface2 bg-surface p-4 sm:p-6 mb-6">
             <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-4">Genre</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {GENRES.map((g) => (
@@ -275,7 +275,7 @@ export default function GuestPlay() {
           </section>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <section className="rounded-2xl border-2 border-surface2 bg-surface p-6">
+            <section className="rounded-2xl border-2 border-surface2 bg-surface p-4 sm:p-6">
               <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-4">Slide Pacing Budget</h2>
               <div className="grid grid-cols-2 gap-2">
                 {[5, 10].map((n) => (
@@ -296,7 +296,7 @@ export default function GuestPlay() {
               <p className="text-xs text-muted mt-1">20-slide sagas are available to signed-in accounts.</p>
             </section>
 
-            <section className="rounded-2xl border-2 border-surface2 bg-surface p-6">
+            <section className="rounded-2xl border-2 border-surface2 bg-surface p-4 sm:p-6">
               <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-4">Content Maturity</h2>
               <div className="flex gap-3">
                 {RATINGS.map((r) => (
@@ -322,7 +322,7 @@ export default function GuestPlay() {
               </p>
             </section>
 
-            <section className="rounded-2xl border-2 border-surface2 bg-surface p-6">
+            <section className="rounded-2xl border-2 border-surface2 bg-surface p-4 sm:p-6">
               <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-4">Text Length</h2>
               <div className="flex gap-3">
                 {(["standard", "concise"] as const).map((p) => (
@@ -345,7 +345,7 @@ export default function GuestPlay() {
             </section>
           </div>
 
-          <section className="rounded-2xl border-2 border-surface2 bg-surface p-6 mb-6">
+          <section className="rounded-2xl border-2 border-surface2 bg-surface p-4 sm:p-6 mb-6">
             <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-4">Opening</h2>
             <textarea
               value={seed}
@@ -355,7 +355,7 @@ export default function GuestPlay() {
             />
           </section>
 
-          <section className="rounded-2xl border-2 border-surface2 bg-surface p-6 mb-6">
+          <section className="rounded-2xl border-2 border-surface2 bg-surface p-4 sm:p-6 mb-6">
             <h2 className="font-mech text-xs uppercase tracking-[0.2em] text-muted mb-4">
               What the story should focus on <span className="text-muted/70">(optional)</span>
             </h2>
