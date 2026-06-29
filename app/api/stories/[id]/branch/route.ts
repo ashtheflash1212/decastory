@@ -36,6 +36,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   // New branch is always a fresh 5-slide arc, per the PRD's Timeline Split spec.
+  // Carries over every setting that shapes HOW the AI writes (not
+  // just what genre/rating it is) — focus_prompt especially, since
+  // without it the branch has no idea the player ever constrained
+  // the subject, and genre flavor can drift right back in.
   const { data: newStory, error } = await supabase
     .from("stories")
     .insert({
@@ -43,7 +47,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       genre: parentStory.genre,
       maturity_rating: parentStory.maturity_rating,
       slide_budget: 5,
+      prose_length: parentStory.prose_length,
       seed_prompt: parentStory.seed_prompt,
+      focus_prompt: parentStory.focus_prompt,
+      high_intensity: parentStory.high_intensity,
       karma_vector: parentStory.karma_vector,
       parent_story_id: parentStory.id,
       branch_point_slide,
