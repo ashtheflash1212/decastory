@@ -26,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
-  const { additional_slides } = await req.json().catch(() => ({ additional_slides: null }));
+  const { additional_slides, continuation_focus } = await req.json().catch(() => ({ additional_slides: null }));
   if (!VALID_EXTENSIONS.includes(additional_slides)) {
     return NextResponse.json({ error: "Invalid extension amount." }, { status: 400 });
   }
@@ -82,6 +82,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const missingWord = isMissingWordSlide(nextSlideNumber, newBudget, story.genre);
   const dramaticFinale = story.genre === "romance" && isLastChoiceSlide(nextSlideNumber, newBudget);
 
+  // Merge any new continuation guidance into the persisted focus
+  // prompt rather than replacing it — this way the original focus
+  // (if any) keeps applying, AND the new guidance carries forward
+  // into any further continues of this same story, not just this
+  // one batch of slides.
+  const trimmedContinuationFocus = typeof continuation_focus === "string" ? continuation_focus.trim() : "";
+  const combinedFocusPrompt = trimmedContinuationFocus
+    ? story.focus_prompt
+      ? `${story.focus_prompt} For this continuation specifically: ${trimmedContinuationFocus}`
+      : trimmedContinuationFocus
+    : story.focus_prompt;
+
   const historyForPrompt = slides.map((s) => ({
     slide_number: s.slide_number,
     prose: s.prose,
@@ -94,7 +106,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     newBudget,
     story.prose_length,
     story.high_intensity,
-    story.focus_prompt
+    combinedFocusPrompt
   );
   const userPrompt = buildUserPrompt({
     slideNumber: nextSlideNumber,
@@ -109,7 +121,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     isContinuation: true,
     missingWord,
     dramaticFinale,
-    focusPrompt: story.focus_prompt,
+    focusPrompt: combinedFocusPrompt,
   });
 
   const ai = await getAIProvider();
@@ -153,6 +165,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     slide_budget: newBudget,
     status: isFinal ? (died ? "failed" : "completed") : "in_progress",
     karma_vector: karma,
+    focus_prompt: combinedFocusPrompt,
   };
   if (isFinal && aiResponse.story_title) storyUpdate.title = aiResponse.story_title;
   if (!isFinal) storyUpdate.completed_at = null;

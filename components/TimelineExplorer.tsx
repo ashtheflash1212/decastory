@@ -110,29 +110,35 @@ function TreeNode({
 }) {
   const children = childrenOf.get(story.id) ?? [];
   const isHighlighted = story.id === highlightId;
+  // Indentation grows for the first 3 levels, then stops adding
+  // further margin — otherwise a branch-of-a-branch-of-a-branch
+  // chain compounds enough cumulative indent to squeeze content
+  // into a sliver on narrow phones. Deeper levels still nest in the
+  // tree structure itself, just without visually indenting further.
+  const wrapperClass = depth === 0 ? "mt-0" : depth <= 3 ? "ml-3 sm:ml-6 pl-2 sm:pl-4 border-l-2 border-surface2 mt-2 sm:mt-3" : "mt-2 sm:mt-3";
 
   return (
-    <div className={depth > 0 ? "ml-6 pl-4 border-l-2 border-surface2 mt-3" : "mt-0"}>
+    <div className={wrapperClass}>
       <Link
         href={`/story/${story.id}`}
-        className={`block rounded-xl border-2 px-4 py-3 transition-all duration-200 hover:scale-[1.01] ${
+        className={`block rounded-xl border-2 px-3 sm:px-4 py-2.5 sm:py-3 transition-all duration-200 hover:scale-[1.01] ${
           isHighlighted ? "border-brass bg-surface2" : "border-surface2 bg-surface hover:border-sage"
         }`}
       >
         <div className="flex items-center justify-between gap-2">
           <span className="text-cocoa">{GENRE_ICON[story.genre] ?? "●"}</span>
           <span
-            className={`font-mech text-[10px] uppercase tracking-wide px-2 py-0.5 rounded ${
+            className={`font-mech text-[9px] sm:text-[10px] uppercase tracking-wide px-1.5 sm:px-2 py-0.5 rounded whitespace-nowrap ${
               story.status === "completed" ? "bg-surface2 text-cocoa" : "bg-surface2 text-steel"
             }`}
           >
             {story.status === "completed" ? "Complete" : "In Progress"}
           </span>
         </div>
-        <p className="font-display text-lg mt-1">{story.title}</p>
-        <p className="text-xs text-muted mt-0.5">
+        <p className="font-display text-base sm:text-lg mt-1 truncate">{story.title}</p>
+        <p className="text-[11px] sm:text-xs text-muted mt-0.5">
           {story.slides?.length ?? 0}/{story.slide_budget} slides
-          {depth > 0 && story.branch_point_slide ? ` · branched from slide ${story.branch_point_slide}` : ""}
+          {depth > 0 && story.branch_point_slide ? ` · from slide ${story.branch_point_slide}` : ""}
         </p>
       </Link>
 

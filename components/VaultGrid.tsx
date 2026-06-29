@@ -14,6 +14,7 @@ export default function VaultGrid({ stories = [] }: { stories?: VaultStory[] }) 
   // rendered its own full-screen overlay.
   const [continuingStory, setContinuingStory] = useState<VaultStory | null>(null);
   const [extending, setExtending] = useState(false);
+  const [continuationFocus, setContinuationFocus] = useState("");
 
   const sorted = useMemo(() => {
     const safe = stories ?? [];
@@ -28,7 +29,10 @@ export default function VaultGrid({ stories = [] }: { stories?: VaultStory[] }) 
       const res = await fetch(`/api/stories/${continuingStory.id}/extend`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ additional_slides: additionalSlides }),
+        body: JSON.stringify({
+          additional_slides: additionalSlides,
+          continuation_focus: continuationFocus.trim() || null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to continue story.");
@@ -38,6 +42,12 @@ export default function VaultGrid({ stories = [] }: { stories?: VaultStory[] }) 
       setExtending(false);
       setContinuingStory(null);
     }
+  }
+
+  function closeModal() {
+    if (extending) return;
+    setContinuingStory(null);
+    setContinuationFocus("");
   }
 
   return (
@@ -69,9 +79,7 @@ export default function VaultGrid({ stories = [] }: { stories?: VaultStory[] }) 
       {continuingStory && (
         <div
           className="fixed inset-0 bg-black/40 flex items-center justify-center px-6 z-50"
-          onClick={() => {
-            if (!extending) setContinuingStory(null);
-          }}
+          onClick={closeModal}
         >
           <div onClick={(e) => e.stopPropagation()} className="bg-surface rounded-2xl border-2 border-surface2 p-6 max-w-sm w-full">
             <h3 className="font-display text-xl mb-2">Continue this story</h3>
@@ -79,6 +87,18 @@ export default function VaultGrid({ stories = [] }: { stories?: VaultStory[] }) 
               Pick up where "{continuingStory.title}" left off, with the full history so far carried into the new
               chapters.
             </p>
+
+            <label className="block font-mech text-[11px] uppercase tracking-wide text-muted mb-1.5">
+              What should it focus on? (optional)
+            </label>
+            <textarea
+              value={continuationFocus}
+              onChange={(e) => setContinuationFocus(e.target.value)}
+              disabled={extending}
+              placeholder='e.g. "Bring back the rival from slide 2."'
+              className="w-full bg-surface border-2 border-surface2 rounded-xl px-3 py-2 text-sm outline-none transition-colors focus:border-sage resize-none h-16 mb-4 disabled:opacity-50"
+            />
+
             <div className="flex gap-2">
               {[5, 10, 20].map((n) => (
                 <button
@@ -93,7 +113,7 @@ export default function VaultGrid({ stories = [] }: { stories?: VaultStory[] }) 
             </div>
             {extending && <p className="text-sm text-muted mt-4">Writing the next chapter…</p>}
             <button
-              onClick={() => setContinuingStory(null)}
+              onClick={closeModal}
               disabled={extending}
               className="text-sm text-muted hover:text-rust mt-5 disabled:opacity-40"
             >
