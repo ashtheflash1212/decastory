@@ -29,6 +29,7 @@ create table if not exists stories (
   high_intensity boolean not null default false,
   rewrites_remaining int not null default 0, -- Fantasy only: how many times the player can undo their last choice
   focus_prompt text, -- player's optional override keeping genre flavor from drifting off their actual subject
+  intro_text text, -- short scene-setting prologue shown before slide 1, generated alongside it in the same AI call
   powerups_remaining int not null default 0,
   shield_active boolean not null default false,
   created_at timestamptz not null default now(),

@@ -37,6 +37,7 @@ export default function StoryCanvas({
   // whenever a new slide loads.
   const [overrideChoiceId, setOverrideChoiceId] = useState<string | null>(null);
   const [overrideText, setOverrideText] = useState<string | null>(null);
+  const [introDismissed, setIntroDismissed] = useState(false);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -49,6 +50,12 @@ export default function StoryCanvas({
   const isBusy = loading || cooldown > 0;
   const hasHiddenWords = !!currentSlide.redacted_words?.length;
   const isAction = story.genre === "action";
+  const showIntro =
+    !introDismissed &&
+    !!story.intro_text &&
+    slides.length === 1 &&
+    currentSlide.slide_number === 1 &&
+    !currentSlide.chosen_choice_id;
   const canRewriteSlide =
     story.genre === "fantasy" &&
     story.rewrites_remaining > 0 &&
@@ -68,7 +75,7 @@ export default function StoryCanvas({
   // the genre's "no time to think" identity literally.
   useEffect(() => {
     if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
-    if (!isAction || isComplete || currentSlide.choices.length === 0) return;
+    if (!isAction || isComplete || showIntro || currentSlide.choices.length === 0) return;
 
     setTimerKey((k) => k + 1);
     actionTimeoutRef.current = setTimeout(() => {
@@ -80,7 +87,7 @@ export default function StoryCanvas({
       if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSlide.id, isAction, isComplete]);
+  }, [currentSlide.id, isAction, isComplete, showIntro]);
 
   async function pickChoice(choiceId: string) {
     if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
@@ -158,7 +165,20 @@ export default function StoryCanvas({
 
   return (
     <div className="max-w-xl mx-auto">
-      <ProgressRibbon current={currentSlide.slide_number} total={story.slide_budget} />
+      {showIntro ? (
+        <div className="px-6 py-8">
+          <p className="font-mech text-[11px] uppercase tracking-wide text-muted mb-3">Prologue</p>
+          <p className="font-display text-[19px] leading-relaxed">{story.intro_text}</p>
+          <button
+            onClick={() => setIntroDismissed(true)}
+            className="mt-8 bg-brass text-ink font-medium rounded-xl px-6 py-3 text-base transition-all duration-200 hover:scale-105 hover:opacity-90"
+          >
+            Begin Story →
+          </button>
+        </div>
+      ) : (
+        <>
+          <ProgressRibbon current={currentSlide.slide_number} total={story.slide_budget} />
 
       <div className="px-6 py-8">
         <p className="font-mech text-[11px] uppercase tracking-wide text-muted mb-3">
@@ -254,7 +274,9 @@ export default function StoryCanvas({
             </a>
           </div>
         )}
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

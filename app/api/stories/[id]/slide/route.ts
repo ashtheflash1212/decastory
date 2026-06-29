@@ -121,6 +121,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   const nextSlideNumber = (lastSlide?.slide_number ?? 0) + 1;
+  const isFirstSlide = nextSlideNumber === 1;
   const phase = computePhase(nextSlideNumber, story.slide_budget);
   const isFinal = isFinalSlide(nextSlideNumber, story.slide_budget);
   const died = isFinal && checkForDeath(karma, getGenre(story.genre).deathThreshold);
@@ -159,6 +160,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     missingWord,
     dramaticFinale,
     focusPrompt: story.focus_prompt,
+    requestIntro: isFirstSlide,
   });
 
   const ai = await getAIProvider();
@@ -205,6 +207,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   const storyUpdate: Record<string, unknown> = { karma_vector: karma, rewrites_remaining: rewritesRemaining };
+  if (isFirstSlide && aiResponse.intro) {
+    storyUpdate.intro_text = aiResponse.intro;
+  }
   if (isFinal) {
     storyUpdate.status = died ? "failed" : "completed";
     storyUpdate.completed_at = new Date().toISOString();
@@ -218,5 +223,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     is_final: isFinal,
     died,
     rewrites_remaining: rewritesRemaining,
+    intro_text: isFirstSlide ? aiResponse.intro ?? null : undefined,
   });
 }

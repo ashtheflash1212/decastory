@@ -61,6 +61,8 @@ export default function GuestPlay() {
   // the CURRENT slide. Resets whenever a new slide loads.
   const [overrideChoiceId, setOverrideChoiceId] = useState<string | null>(null);
   const [overrideText, setOverrideText] = useState<string | null>(null);
+  const [introText, setIntroText] = useState<string | null>(null);
+  const [introDismissed, setIntroDismissed] = useState(false);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -78,6 +80,7 @@ export default function GuestPlay() {
     overrideChoiceId === null &&
     currentSlide?.narrative_phase !== "CLIMAX" &&
     currentSlide?.narrative_phase !== "RESOLUTION";
+  const showIntro = !introDismissed && !!introText && slides.length === 1 && currentSlide?.slide_number === 1;
 
   useEffect(() => {
     setRevealed(false);
@@ -89,7 +92,7 @@ export default function GuestPlay() {
   // option if time runs out.
   useEffect(() => {
     if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
-    if (!isAction || isComplete || !currentSlide || currentSlide.choices.length === 0) return;
+    if (!isAction || isComplete || showIntro || !currentSlide || currentSlide.choices.length === 0) return;
 
     setTimerKey((k) => k + 1);
     actionTimeoutRef.current = setTimeout(() => {
@@ -101,7 +104,7 @@ export default function GuestPlay() {
       if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSlide?.slide_number, isAction, isComplete]);
+  }, [currentSlide?.slide_number, isAction, isComplete, showIntro]);
 
 
   async function requestSlide(lastChoice: Choice | null, forceNullSeed: boolean = false) {
@@ -148,6 +151,7 @@ export default function GuestPlay() {
       ]);
       setKarma(data.karma_vector);
       if (typeof data.rewrites_remaining === "number") setRewritesRemaining(data.rewrites_remaining);
+      if (typeof data.intro_text === "string") setIntroText(data.intro_text);
       if (data.is_final) {
         setIsComplete(true);
         setDied(!!data.died);
@@ -163,12 +167,16 @@ export default function GuestPlay() {
 
   function startStory() {
     setRewritesRemaining(initialRewrites(genre, budget));
+    setIntroText(null);
+    setIntroDismissed(false);
     setPhase("playing");
     requestSlide(null, false);
   }
 
   function startStoryRandom() {
     setRewritesRemaining(initialRewrites(genre, budget));
+    setIntroText(null);
+    setIntroDismissed(false);
     setPhase("playing");
     requestSlide(null, true);
   }
@@ -182,6 +190,8 @@ export default function GuestPlay() {
     setRewritesRemaining(0);
     setOverrideChoiceId(null);
     setOverrideText(null);
+    setIntroText(null);
+    setIntroDismissed(false);
     setError(null);
     setPhase("config");
   }
@@ -393,6 +403,19 @@ export default function GuestPlay() {
 
       {phase === "playing" && currentSlide && (
         <div className="max-w-xl mx-auto">
+          {showIntro ? (
+            <div className="px-6 py-8">
+              <p className="font-mech text-[11px] uppercase tracking-wide text-muted mb-3">Prologue</p>
+              <p className="font-display text-[19px] leading-relaxed">{introText}</p>
+              <button
+                onClick={() => setIntroDismissed(true)}
+                className="mt-8 bg-brass text-ink font-medium rounded-xl px-6 py-3 text-base transition-all duration-200 hover:scale-105 hover:opacity-90"
+              >
+                Begin Story →
+              </button>
+            </div>
+          ) : (
+          <>
           <ProgressRibbon current={currentSlide.slide_number} total={budget} />
 
           <div className="px-6 py-8">
@@ -475,6 +498,8 @@ export default function GuestPlay() {
               </div>
             )}
           </div>
+          </>
+          )}
         </div>
       )}
     </main>

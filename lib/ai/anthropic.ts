@@ -48,6 +48,7 @@ export class AnthropicProvider implements AIProvider {
       prose: String(parsed.prose ?? "").trim(),
       choices: Array.isArray(parsed.choices) ? parsed.choices : [],
       redacted_words: Array.isArray(parsed.redacted_words) ? parsed.redacted_words.map(String) : undefined,
+      intro: parsed.intro ? String(parsed.intro).trim() : undefined,
     };
   }
 }

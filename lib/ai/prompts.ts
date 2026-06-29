@@ -62,7 +62,8 @@ ${
 12. Use only plain ASCII punctuation — regular hyphens (-), straight quotes ("), and standard apostrophes ('). Do not use em-dashes, en-dashes, smart/curly quotes, or any other special punctuation characters.
 ${highIntensity ? `13. This story's opening was intense enough that the conclusion is GUARANTEED to be dramatic and high-stakes — never let the RESOLUTION slide be quiet, anticlimactic, or gentle, regardless of how the middle of the story went. The ending must feel as intense as how it began.` : ""}
 14. On a slide flagged as a MISSING-WORD slide (you'll be told when), also return a "redacted_words" array of 2-4 EXACT substrings copied verbatim from your prose field. Pick narratively significant words or short phrases (a name, a key object, a crucial detail) whose absence makes the player uneasy — never pick filler words. These will be hidden from the player until after they choose, then revealed.
-15. Respond ONLY with the JSON object matching the required schema. No prose outside the JSON, no markdown fences.`;
+15. On slide 1 ONLY (you'll be told when this applies), also return an "intro" field: 2-4 sentences of pure scene-setting and world-building — the broader setting, mood, and stakes — shown to the player as a short prologue BEFORE slide 1 itself appears. Do not repeat this content verbatim in slide 1's own prose; the intro sets the stage, the prose then drops the player into the actual moment.
+16. Respond ONLY with the JSON object matching the required schema. No prose outside the JSON, no markdown fences.`;
 }
 
 interface HistoryItem {
@@ -85,6 +86,7 @@ export function buildUserPrompt(params: {
   missingWord?: boolean;
   dramaticFinale?: boolean;
   focusPrompt?: string | null;
+  requestIntro?: boolean;
 }): string {
   const {
     slideNumber,
@@ -100,6 +102,7 @@ export function buildUserPrompt(params: {
     missingWord,
     dramaticFinale,
     focusPrompt,
+    requestIntro,
   } = params;
 
   const historyBlock = history.length
@@ -136,12 +139,16 @@ export function buildUserPrompt(params: {
     ? `\nREMINDER (system rule 0): this story must stay entirely about "${focusPrompt}". Do not introduce unrelated disasters or environmental spectacle this slide — keep the tension coming from within that subject.`
     : "";
 
+  const introBlock = requestIntro
+    ? `\nTHIS IS SLIDE 1. Also return an "intro" field per system rule 15 — a short prologue setting the scene before this slide's own action begins.`
+    : "";
+
   return `${PHASE_GUIDANCE[phase]}
 
 Progress: slide ${slideNumber} of ${totalBudget} (P = ${(slideNumber / totalBudget).toFixed(2)})
 Current karma vector: ${JSON.stringify(karma)}
 ${lastChoiceText ? `The player just chose: "${lastChoiceText}"` : ""}
-${checkBlock}${deathBlock}${continuationBlock}${missingWordBlock}${finaleBlock}
+${checkBlock}${deathBlock}${continuationBlock}${missingWordBlock}${finaleBlock}${introBlock}
 
 Story so far:
 ${historyBlock}
@@ -155,6 +162,7 @@ export const RESPONSE_JSON_SCHEMA = {
     story_title: { type: "string", nullable: true },
     prose: { type: "string" },
     redacted_words: { type: "array", items: { type: "string" } },
+    intro: { type: "string" },
     choices: {
       type: "array",
       items: {

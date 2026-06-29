@@ -53,6 +53,7 @@ export interface StoryRecord {
   high_intensity: boolean;
   rewrites_remaining: number;
   focus_prompt: string | null;
+  intro_text: string | null;
   powerups_remaining: number;
   shield_active: boolean;
   status: "in_progress" | "completed" | "failed";
@@ -71,4 +72,5 @@ export interface AISlideResponse {
   prose: string;
   choices: Choice[];
   redacted_words?: string[];
+  intro?: string; // only requested on slide 1 - a short prologue shown before the story proper begins
 }

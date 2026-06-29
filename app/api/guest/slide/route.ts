@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
   }
 
   const nextSlideNumber = priorSlides.length ? priorSlides[priorSlides.length - 1].slide_number + 1 : 1;
+  const isFirstSlide = nextSlideNumber === 1;
   const phase = computePhase(nextSlideNumber, slide_budget);
   const isFinal = isFinalSlide(nextSlideNumber, slide_budget);
   const died = isFinal && checkForDeath(karma, getGenre(genre).deathThreshold);
@@ -109,6 +110,7 @@ export async function POST(req: NextRequest) {
     missingWord,
     dramaticFinale,
     focusPrompt: focus_prompt,
+    requestIntro: isFirstSlide,
   });
 
   const ai = await getAIProvider();
@@ -148,5 +150,6 @@ export async function POST(req: NextRequest) {
     died,
     rewrites_remaining: rewritesAfter,
     story_title: isFinal ? aiResponse.story_title : null,
+    intro_text: isFirstSlide ? aiResponse.intro ?? null : undefined,
   });
 }
