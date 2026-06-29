@@ -34,9 +34,9 @@ export default async function HowItWorksPage() {
               <h2 className="font-display text-2xl">The basic loop</h2>
             </div>
             <p className="text-[15px] leading-relaxed">
-              Every story is built from a fixed number of slides — 5, 10, or 20, whichever you picked. Each slide
-              shows a short bit of prose, then gives you 3 choices. Whichever you pick shapes what happens next. The
-              story always ends exactly on the slide budget you chose — no more, no less.
+              Each story is constructed from either 5, 10, or 20 slides. Following a brief introduction, you will
+              navigate through the respective slides with choices to choose from. These choices affect the story,
+              so be sure to choose wisely.
             </p>
           </section>
 
@@ -48,8 +48,7 @@ export default async function HowItWorksPage() {
               <h2 className="font-display text-2xl">Every choice has a cost</h2>
             </div>
             <p className="text-[15px] leading-relaxed mb-4">
-              Choices aren't just flavor — each one quietly nudges one of a few hidden traits your character is
-              building up over the course of the story:
+              Each choice holds hidden traits that you build up over the course of each story:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <div className="rounded-xl bg-steel/10 px-4 py-3">
@@ -70,9 +69,8 @@ export default async function HowItWorksPage() {
               </div>
             </div>
             <p className="text-[15px] leading-relaxed">
-              You'll see which trait a choice leans into as a small colored label underneath it. There's no
-              "correct" trait to build — they just track which kind of character you're playing as the story
-              unfolds.
+              These traits are labeled underneath your choices. It's up to you to choose what type of character you
+              want to be; in the end, your dominant character trait will matter.
             </p>
           </section>
 
@@ -85,11 +83,11 @@ export default async function HowItWorksPage() {
             </div>
             <p className="text-[15px] leading-relaxed mb-3">
               Near the climax, if you've leaned hard enough into one trait through your choices, the story can put
-              that to the test. This isn't a dice roll — it's based entirely on what you've already chosen.
+              that to the test. Remember, this isn't done by chance - this is strategic.
             </p>
             <p className="text-[15px] leading-relaxed">
-              Either way, the story tells you what happened concretely. You can usually look back at your own
-              choices and see exactly why it went the way it did.
+              The story will most likely provide information about your dominant trait towards the end, and you
+              can look back at your choices at the end.
             </p>
           </section>
 
@@ -101,9 +99,8 @@ export default async function HowItWorksPage() {
               <h2 className="font-display text-2xl">Timeline Split</h2>
             </div>
             <p className="text-[15px] leading-relaxed mb-3">
-              Once a story is finished, you can fork it from any earlier slide into a brand new 5-slide story — same
-              history up to that point, but a fresh path forward. Useful for exploring "what if I'd chosen
-              differently?"
+              Once a story is finished, you can fork it from any earlier slide to create a whole other story. For
+              example, if I fork from slide 3/5 from story A, story B will start a new story from slide 3.
             </p>
             <p className="text-sm text-muted">
               Timeline Split and the Timeline Tree page are only available on a signed-in account — guest stories

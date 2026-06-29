@@ -43,6 +43,14 @@ export default function GuestPlay() {
   const [proseLength, setProseLength] = useState<"concise" | "standard">("standard");
   const [seed, setSeed] = useState("");
   const [focusPrompt, setFocusPrompt] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const [slides, setSlides] = useState<GuestSlide[]>([]);
   const [karma, setKarma] = useState<KarmaVector>({ prudence: 0, force: 0, subtlety: 0, genre_axis: 0 });
@@ -375,7 +383,11 @@ export default function GuestPlay() {
             <textarea
               value={focusPrompt}
               onChange={(e) => setFocusPrompt(e.target.value)}
-              placeholder='e.g. "Keep this entirely about an intense 1-on-1 basketball game — no unrelated disasters."'
+              placeholder={
+                isMobile
+                  ? 'e.g. "Stay on the basketball game, no disasters."'
+                  : 'e.g. "Keep this entirely about an intense 1-on-1 basketball game — no unrelated disasters."'
+              }
               className="w-full bg-surface border-2 border-surface2 rounded-xl px-4 py-3 text-base outline-none transition-colors focus:border-sage resize-none h-20"
             />
           </section>

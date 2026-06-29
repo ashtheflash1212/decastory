@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GENRES } from "@/lib/genres";
 
@@ -20,6 +20,14 @@ export default function ConfigHub({
   const [proseLength, setProseLength] = useState<"concise" | "standard">("standard");
   const [seed, setSeed] = useState("");
   const [focusPrompt, setFocusPrompt] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -209,7 +217,11 @@ export default function ConfigHub({
         <textarea
           value={focusPrompt}
           onChange={(e) => setFocusPrompt(e.target.value)}
-          placeholder='e.g. "Keep this entirely about an intense 1-on-1 basketball game — no unrelated disasters."'
+          placeholder={
+            isMobile
+              ? 'e.g. "Stay on the basketball game, no disasters."'
+              : 'e.g. "Keep this entirely about an intense 1-on-1 basketball game — no unrelated disasters."'
+          }
           className="w-full bg-surface border-2 border-surface2 rounded-xl px-4 py-3 text-base outline-none transition-colors focus:border-sage resize-none h-20"
         />
       </section>
