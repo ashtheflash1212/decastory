@@ -10,7 +10,7 @@ const LINKS = [
   { href: "/vault", label: "The Vault" },
   { href: "/how-it-works", label: "How It Works?" },
   { href: "/timeline", label: "Timeline Tree" },
-  { href: "/achievements", label: "Achievements" },
+  { href: "/statistics", label: "Statistics" },
 ];
 
 export default function TopNav({ email }: { email: string }) {
