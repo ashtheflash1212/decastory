@@ -5,6 +5,7 @@ import Link from "next/link";
 import { GENRES, getGenre } from "@/lib/genres";
 import { Choice, KarmaVector } from "@/lib/types";
 import { maskProse } from "@/lib/maskText";
+import { getOrCreateGuestId } from "@/lib/guestId";
 import ProgressRibbon from "./ProgressRibbon";
 import ChoiceCard from "./ChoiceCard";
 
@@ -44,6 +45,11 @@ export default function GuestPlay() {
   const [seed, setSeed] = useState("");
   const [focusPrompt, setFocusPrompt] = useState("");
   const [isMobile, setIsMobile] = useState(false);
+  const [guestId, setGuestId] = useState("");
+
+  useEffect(() => {
+    setGuestId(getOrCreateGuestId());
+  }, []);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
@@ -146,6 +152,7 @@ export default function GuestPlay() {
           last_choice: lastChoice,
           override_text: usingOverride,
           rewrites_remaining: rewritesRemaining,
+          guest_id: guestId || null,
         }),
       });
       const data = await res.json();

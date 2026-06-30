@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
     last_choice,
     override_text,
     rewrites_remaining,
+    guest_id,
   }: {
     genre: string;
     maturity_rating: MaturityRating;
@@ -54,6 +55,7 @@ export async function POST(req: NextRequest) {
     last_choice: Choice | null;
     override_text?: string | null;
     rewrites_remaining?: number;
+    guest_id?: string | null;
   } = body;
 
   const proseLength: "concise" | "standard" = prose_length === "concise" ? "concise" : "standard";
@@ -129,6 +131,9 @@ export async function POST(req: NextRequest) {
   try {
     const admin = createAdminClient();
     await admin.rpc("increment_daily_usage");
+    if (guest_id) {
+      await admin.rpc("increment_guest_daily_usage", { p_guest_id: guest_id });
+    }
   } catch {
     // best-effort, never block the story over this
   }

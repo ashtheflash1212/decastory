@@ -184,3 +184,34 @@ as $$
     0
   );
 $$;
+
+-- Anonymous guest usage tracking. guest_id is a random UUID
+-- generated client-side and stored in a cookie — it is NOT tied to
+-- any identity, IP address, or account. Purpose is purely to count
+-- unique guest visitors and their activity (e.g. "how many distinct
+-- people tried guest mode today" vs "how many slides were generated
+-- in guest mode today"), not to identify anyone.
+create table if not exists guest_usage_daily (
+  guest_id uuid not null,
+  usage_date date not null,
+  request_count int not null default 0,
+  primary key (guest_id, usage_date)
+);
+
+alter table guest_usage_daily enable row level security;
+
+create or replace function increment_guest_daily_usage(p_guest_id uuid, p_date date default current_date)
+returns int
+language plpgsql
+security definer
+as $$
+declare
+  new_count int;
+begin
+  insert into guest_usage_daily (guest_id, usage_date, request_count)
+  values (p_guest_id, p_date, 1)
+  on conflict (guest_id, usage_date) do update set request_count = guest_usage_daily.request_count + 1
+  returning request_count into new_count;
+  return new_count;
+end;
+$$;
