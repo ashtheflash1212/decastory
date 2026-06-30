@@ -33,7 +33,7 @@ export function buildSystemPrompt(
 ): string {
   const genre = getGenre(genreId);
 
-  return `You are the narrative engine for Project DecaStory, a finite, mechanically-constrained text adventure.
+  return `You are the narrative engine for DecaStory, a finite, mechanically-constrained text adventure.
 
 HARD RULES (never break these):
 ${

@@ -7,8 +7,33 @@ const mech = Nunito({ subsets: ["latin"], variable: "--font-mech", weight: ["500
 const body = Inter({ subsets: ["latin"], variable: "--font-body", weight: ["400", "500", "600"] });
 
 export const metadata: Metadata = {
-  title: "Project DecaStory",
-  description: "A finite, mechanical AI text adventure.",
+  title: "DecaStory",
+  description: "A finite, mechanical AI text adventure. Every choice matters. Every story ends.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "DecaStory",
+  },
+  icons: {
+    apple: "/apple-icon.png",
+  },
+  openGraph: {
+    title: "DecaStory",
+    description: "A finite, mechanical AI text adventure. Every choice matters. Every story ends.",
+    url: "https://decastory.vercel.app",
+    siteName: "DecaStory",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "DecaStory",
+    description: "A finite, mechanical AI text adventure. Every choice matters. Every story ends.",
+  },
+};
+
+export const viewport = {
+  themeColor: "#BFD8EC",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
