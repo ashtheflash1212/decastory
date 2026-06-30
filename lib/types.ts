@@ -54,6 +54,8 @@ export interface StoryRecord {
   rewrites_remaining: number;
   focus_prompt: string | null;
   intro_text: string | null;
+  feedback_rating: "up" | "down" | null;
+  feedback_comment: string | null;
   powerups_remaining: number;
   shield_active: boolean;
   status: "in_progress" | "completed" | "failed";

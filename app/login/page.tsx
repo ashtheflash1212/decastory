@@ -34,7 +34,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-6">
+    <main className="min-h-screen min-h-[100dvh] flex items-center justify-center px-6 py-8">
       <div className="w-full max-w-sm rounded-2xl border-2 border-surface2 bg-surface p-8 shadow-lg transition-all duration-300 hover:shadow-xl">
         <p className="font-mech text-xs uppercase tracking-[0.2em] text-cocoa mb-2">DecaStory</p>
         <h1 className="font-display text-4xl mb-8">

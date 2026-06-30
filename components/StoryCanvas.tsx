@@ -38,6 +38,11 @@ export default function StoryCanvas({
   const [overrideChoiceId, setOverrideChoiceId] = useState<string | null>(null);
   const [overrideText, setOverrideText] = useState<string | null>(null);
   const [introDismissed, setIntroDismissed] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState<"up" | "down" | null>(story.feedback_rating ?? null);
+  const [feedbackComment, setFeedbackComment] = useState(story.feedback_comment ?? "");
+  const [showCommentBox, setShowCommentBox] = useState(false);
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackSaved, setFeedbackSaved] = useState(!!story.feedback_rating);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -160,6 +165,25 @@ export default function StoryCanvas({
     }
   }
 
+  async function submitFeedback(rating: "up" | "down", comment: string) {
+    setFeedbackRating(rating);
+    setSubmittingFeedback(true);
+    try {
+      const res = await fetch(`/api/stories/${story.id}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating, comment: comment.trim() || null }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      setFeedbackSaved(true);
+      setShowCommentBox(false);
+    } catch {
+      // non-critical — don't block the player over a feedback save failing
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  }
+
   const displayedProse =
     hasHiddenWords && !revealed ? maskProse(currentSlide.prose, currentSlide.redacted_words) : currentSlide.prose;
 
@@ -248,6 +272,66 @@ export default function StoryCanvas({
             <p className="text-sm text-muted mb-4">
               {slides.length}/{story.slide_budget} slides survived.
             </p>
+
+            <div className="rounded-xl border-2 border-surface2 bg-surface2/40 px-4 py-3 mb-4">
+              {feedbackSaved ? (
+                <p className="font-mech text-xs text-muted">
+                  {feedbackRating === "up" ? "👍" : "👎"} Thanks for the feedback!
+                </p>
+              ) : (
+                <>
+                  <p className="font-mech text-xs uppercase tracking-wide text-muted mb-2">Did you like this story?</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setShowCommentBox(true);
+                        setFeedbackRating("up");
+                      }}
+                      disabled={submittingFeedback}
+                      className={`text-2xl rounded-lg border-2 px-3 py-1.5 transition-all duration-200 hover:scale-110 disabled:opacity-40 ${
+                        feedbackRating === "up" ? "border-sage bg-[#F0FFF0]" : "border-surface2 hover:border-sage"
+                      }`}
+                    >
+                      👍
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowCommentBox(true);
+                        setFeedbackRating("down");
+                      }}
+                      disabled={submittingFeedback}
+                      className={`text-2xl rounded-lg border-2 px-3 py-1.5 transition-all duration-200 hover:scale-110 disabled:opacity-40 ${
+                        feedbackRating === "down" ? "border-rust bg-rust/10" : "border-surface2 hover:border-rust"
+                      }`}
+                    >
+                      👎
+                    </button>
+                  </div>
+                  {showCommentBox && feedbackRating && (
+                    <div className="mt-3">
+                      <textarea
+                        value={feedbackComment}
+                        onChange={(e) => setFeedbackComment(e.target.value)}
+                        placeholder={
+                          feedbackRating === "up"
+                            ? "What worked? (optional)"
+                            : "What went wrong? (optional)"
+                        }
+                        className="w-full bg-surface border-2 border-surface2 rounded-lg px-3 py-2 text-sm outline-none transition-colors focus:border-sage resize-none h-16 mb-2"
+                      />
+                      <button
+                        onClick={() => submitFeedback(feedbackRating, feedbackComment)}
+                        disabled={submittingFeedback}
+                        className="font-mech text-xs bg-brass text-ink rounded px-3 py-1.5 hover:opacity-90 disabled:opacity-40"
+                      >
+                        {submittingFeedback ? "Saving…" : "Submit"}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
             <div className="flex flex-wrap gap-2 mb-2">
               {slides.slice(0, -1).map((s) => (
                 <button

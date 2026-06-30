@@ -30,6 +30,8 @@ create table if not exists stories (
   rewrites_remaining int not null default 0, -- Fantasy only: how many times the player can undo their last choice
   focus_prompt text, -- player's optional override keeping genre flavor from drifting off their actual subject
   intro_text text, -- short scene-setting prologue shown before slide 1, generated alongside it in the same AI call
+  feedback_rating text check (feedback_rating in ('up','down')), -- player's thumbs up/down on the finished story
+  feedback_comment text, -- optional short reason, shown alongside the thumbs rating
   powerups_remaining int not null default 0,
   shield_active boolean not null default false,
   created_at timestamptz not null default now(),
