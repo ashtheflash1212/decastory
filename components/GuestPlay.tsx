@@ -68,6 +68,11 @@ export default function GuestPlay() {
   const [error, setError] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
   const [rewritesRemaining, setRewritesRemaining] = useState(0);
+  const [feedbackRating, setFeedbackRating] = useState<"up" | "down" | null>(null);
+  const [feedbackComment, setFeedbackComment] = useState("");
+  const [showCommentBox, setShowCommentBox] = useState(false);
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackSaved, setFeedbackSaved] = useState(false);
   const [timerKey, setTimerKey] = useState(0);
   const actionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -207,8 +212,37 @@ export default function GuestPlay() {
     setOverrideText(null);
     setIntroText(null);
     setIntroDismissed(false);
+    setFeedbackRating(null);
+    setFeedbackComment("");
+    setShowCommentBox(false);
+    setFeedbackSaved(false);
     setError(null);
     setPhase("config");
+  }
+
+  async function submitFeedback(rating: "up" | "down", comment: string) {
+    setFeedbackRating(rating);
+    setSubmittingFeedback(true);
+    try {
+      const res = await fetch("/api/guest/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          guest_id: guestId,
+          genre,
+          slide_budget: budget,
+          rating,
+          comment: comment.trim() || null,
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error);
+      setFeedbackSaved(true);
+      setShowCommentBox(false);
+    } catch {
+      // non-critical — don't block the player over a feedback save failing
+    } finally {
+      setSubmittingFeedback(false);
+    }
   }
 
   return (
@@ -501,6 +535,64 @@ export default function GuestPlay() {
                   {died ? "☠ You Died" : "Story Complete"}
                 </p>
                 {storyTitle && <p className="font-display text-lg mb-4">{storyTitle}</p>}
+
+                <div className="rounded-xl border-2 border-surface2 bg-surface2/40 px-4 py-3 mb-6">
+                  {feedbackSaved ? (
+                    <p className="font-mech text-xs text-muted">
+                      {feedbackRating === "up" ? "👍" : "👎"} Thanks for the feedback!
+                    </p>
+                  ) : (
+                    <>
+                      <p className="font-mech text-xs uppercase tracking-wide text-muted mb-2">
+                        Did you like this story?
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setShowCommentBox(true);
+                            setFeedbackRating("up");
+                          }}
+                          disabled={submittingFeedback}
+                          className={`text-2xl rounded-lg border-2 px-3 py-1.5 transition-all duration-200 hover:scale-110 disabled:opacity-40 ${
+                            feedbackRating === "up" ? "border-sage bg-[#F0FFF0]" : "border-surface2 hover:border-sage"
+                          }`}
+                        >
+                          👍
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowCommentBox(true);
+                            setFeedbackRating("down");
+                          }}
+                          disabled={submittingFeedback}
+                          className={`text-2xl rounded-lg border-2 px-3 py-1.5 transition-all duration-200 hover:scale-110 disabled:opacity-40 ${
+                            feedbackRating === "down" ? "border-rust bg-rust/10" : "border-surface2 hover:border-rust"
+                          }`}
+                        >
+                          👎
+                        </button>
+                      </div>
+                      {showCommentBox && feedbackRating && (
+                        <div className="mt-3">
+                          <textarea
+                            value={feedbackComment}
+                            onChange={(e) => setFeedbackComment(e.target.value)}
+                            placeholder={feedbackRating === "up" ? "What worked? (optional)" : "What went wrong? (optional)"}
+                            className="w-full bg-surface border-2 border-surface2 rounded-lg px-3 py-2 text-sm outline-none transition-colors focus:border-sage resize-none h-16 mb-2"
+                          />
+                          <button
+                            onClick={() => submitFeedback(feedbackRating, feedbackComment)}
+                            disabled={submittingFeedback}
+                            className="font-mech text-xs bg-brass text-ink rounded px-3 py-1.5 hover:opacity-90 disabled:opacity-40"
+                          >
+                            {submittingFeedback ? "Saving…" : "Submit"}
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
                 <p className="text-sm text-muted mb-6">
                   This guest story wasn't saved.{" "}
                   <Link href="/login" className="text-steel underline">
