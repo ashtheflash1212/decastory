@@ -296,48 +296,46 @@ export default function StoryCanvas({
             <div className="rounded-xl border-2 border-surface2 bg-surface2/40 px-4 py-3 mb-4">
               {feedbackSaved ? (
                 <p className="font-mech text-xs text-muted">
-                  {feedbackRating === "up" ? "👍" : "👎"} Thanks for the feedback!
+                  {feedbackRating === "up" ? "↑" : "↓"} Thanks for the feedback!
                 </p>
               ) : (
                 <>
-                  <p className="font-mech text-xs uppercase tracking-wide text-muted mb-2">Did you like this story?</p>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-3">
+                    <p className="font-mech text-xs uppercase tracking-wide text-muted">Did you like this story?</p>
                     <button
-                      onClick={() => {
-                        setShowCommentBox(true);
-                        setFeedbackRating("up");
-                      }}
+                      onClick={() => { setShowCommentBox(true); setFeedbackRating("up"); }}
                       disabled={submittingFeedback}
-                      className={`text-2xl rounded-lg border-2 px-3 py-1.5 transition-all duration-200 hover:scale-110 disabled:opacity-40 ${
-                        feedbackRating === "up" ? "border-sage bg-[#F0FFF0]" : "border-surface2 hover:border-sage"
+                      title="Thumbs up"
+                      className={`rounded-lg border-2 p-1.5 transition-all duration-200 hover:scale-110 disabled:opacity-40 ${
+                        feedbackRating === "up" ? "border-sage bg-[#F0FFF0] text-sage" : "border-surface2 text-muted hover:border-sage hover:text-sage"
                       }`}
                     >
-                      👍
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
+                        <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+                      </svg>
                     </button>
                     <button
-                      onClick={() => {
-                        setShowCommentBox(true);
-                        setFeedbackRating("down");
-                      }}
+                      onClick={() => { setShowCommentBox(true); setFeedbackRating("down"); }}
                       disabled={submittingFeedback}
-                      className={`text-2xl rounded-lg border-2 px-3 py-1.5 transition-all duration-200 hover:scale-110 disabled:opacity-40 ${
-                        feedbackRating === "down" ? "border-rust bg-rust/10" : "border-surface2 hover:border-rust"
+                      title="Thumbs down"
+                      className={`rounded-lg border-2 p-1.5 transition-all duration-200 hover:scale-110 disabled:opacity-40 ${
+                        feedbackRating === "down" ? "border-rust bg-rust/10 text-rust" : "border-surface2 text-muted hover:border-rust hover:text-rust"
                       }`}
                     >
-                      👎
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
+                        <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
+                      </svg>
                     </button>
                   </div>
                   {showCommentBox && feedbackRating && (
-                    <div className="mt-3">
+                    <div className="mt-2.5">
                       <textarea
                         value={feedbackComment}
                         onChange={(e) => setFeedbackComment(e.target.value)}
-                        placeholder={
-                          feedbackRating === "up"
-                            ? "What worked? (optional)"
-                            : "What went wrong? (optional)"
-                        }
-                        className="w-full bg-surface border-2 border-surface2 rounded-lg px-3 py-2 text-sm outline-none transition-colors focus:border-sage resize-none h-16 mb-2"
+                        placeholder={feedbackRating === "up" ? "What worked? (optional)" : "What went wrong? (optional)"}
+                        className="w-full bg-surface border-2 border-surface2 rounded-lg px-3 py-2 text-sm outline-none transition-colors focus:border-sage resize-none h-14 mb-2"
                       />
                       <button
                         onClick={() => submitFeedback(feedbackRating, feedbackComment)}
