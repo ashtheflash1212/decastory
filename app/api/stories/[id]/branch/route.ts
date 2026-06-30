@@ -65,11 +65,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Copy the shared history into the new story so its narrative
   // context starts identical to the parent up to the fork point.
+  // IMPORTANT: preserve choices on ALL copied slides, not just the
+  // branch point — stripping them was the root cause of "no choices
+  // appear" when branching from a slide that was itself a copied
+  // (non-branch-point) slide in a prior branch. Only the chosen_choice_id
+  // is reset on the branch point (so the player makes a fresh choice
+  // there), while earlier slides keep theirs as narrative history context.
   const clonedSlides = slidesUpToBranch.map((s) => ({
     story_id: newStory.id,
     slide_number: s.slide_number,
     prose: s.prose,
-    choices: s.slide_number === branch_point_slide ? s.choices : [],
+    choices: s.choices,
     narrative_phase: s.narrative_phase,
     forced_stat_check: s.forced_stat_check,
     chosen_choice_id: s.slide_number === branch_point_slide ? null : s.chosen_choice_id,
