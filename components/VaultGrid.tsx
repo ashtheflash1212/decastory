@@ -6,7 +6,7 @@ import VaultCard, { VaultStory } from "./VaultCard";
 
 export default function VaultGrid({ stories = [] }: { stories?: VaultStory[] }) {
   const router = useRouter();
-  const [sortMode, setSortMode] = useState<"recent" | "favorites">("recent");
+  const [sortMode, setSortMode] = useState<"recent" | "favorites" | "in_progress">("recent");
 
   // Exactly one continue-story modal exists in the whole page,
   // regardless of how many cards are rendered — this is what
@@ -18,8 +18,11 @@ export default function VaultGrid({ stories = [] }: { stories?: VaultStory[] }) 
 
   const sorted = useMemo(() => {
     const safe = stories ?? [];
-    if (sortMode === "recent") return safe;
-    return [...safe].sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite));
+    if (sortMode === "favorites")
+      return [...safe].sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite));
+    if (sortMode === "in_progress")
+      return safe.filter((s) => s.status === "in_progress");
+    return safe;
   }, [stories, sortMode]);
 
   async function handleExtend(additionalSlides: number) {
@@ -53,21 +56,23 @@ export default function VaultGrid({ stories = [] }: { stories?: VaultStory[] }) 
   return (
     <div>
       <div className="inline-flex rounded-lg border border-surface2 overflow-hidden mb-6">
-        {(["recent", "favorites"] as const).map((mode) => (
+        {(["recent", "favorites", "in_progress"] as const).map((mode) => (
           <button
             key={mode}
             onClick={() => setSortMode(mode)}
             className={`px-4 py-1.5 font-mech text-xs uppercase tracking-wide capitalize ${
-              sortMode === mode ? "bg-brass text-ink" : "bg-surface text-ink hover:bg-surface2"
+              sortMode === mode ? "bg-[#F0FFF0] border-sage text-ink" : "bg-surface text-ink hover:bg-surface2"
             }`}
           >
-            {mode}
+            {mode === "in_progress" ? "In Progress" : mode}
           </button>
         ))}
       </div>
 
       {sorted.length === 0 ? (
-        <p className="text-muted">No stories to show.</p>
+        <p className="text-muted">
+          {sortMode === "in_progress" ? "No stories in progress." : "No stories to show."}
+        </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {sorted.map((s) => (
