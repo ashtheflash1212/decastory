@@ -119,7 +119,7 @@ export default function ChoiceCard({
       onClick={onSelect}
       disabled={disabled}
       style={climaxStyle}
-      className={`relative w-full text-left rounded-lg px-4 py-3 transition disabled:opacity-40 disabled:cursor-not-allowed ${
+      className={`relative w-full text-left rounded-lg px-4 py-3 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] ${
         isClimax ? "border-2 hover:opacity-90" : "border border-surface2 bg-surface hover:border-brass hover:bg-surface2"
       }`}
     >

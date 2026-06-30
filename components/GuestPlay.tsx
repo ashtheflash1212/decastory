@@ -39,6 +39,7 @@ export default function GuestPlay() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [phase, setPhase] = useState<"config" | "playing">("config");
   const [genre, setGenre] = useState(GENRES[0].id);
+  const [hoveredGenre, setHoveredGenre] = useState<string | null>(null);
   const [rating, setRating] = useState<"G" | "PG" | "R">("PG");
   const [budget, setBudget] = useState<5 | 10>(5);
   const [proseLength, setProseLength] = useState<"concise" | "standard">("standard");
@@ -313,7 +314,12 @@ export default function GuestPlay() {
                 <button
                   key={g.id}
                   onClick={() => setGenre(g.id)}
-                  style={{ backgroundColor: g.cardBg }}
+                  onMouseEnter={() => setHoveredGenre(g.id)}
+                  onMouseLeave={() => setHoveredGenre(null)}
+                  style={{
+                    backgroundColor: g.cardBg,
+                    boxShadow: hoveredGenre === g.id ? `0 0 0 3px ${g.cardBg}, 0 4px 16px ${g.cardBg}88` : undefined,
+                  }}
                   className={`relative text-left rounded-xl border-2 px-5 py-6 transition-all duration-200 hover:scale-[1.03] hover:shadow-md ${
                     genre === g.id ? "border-brass" : "border-surface2 hover:border-sage"
                   }`}
@@ -472,10 +478,23 @@ export default function GuestPlay() {
           <ProgressRibbon current={currentSlide.slide_number} total={budget} />
 
           <div className="px-6 py-8">
-            <p className="font-mech text-[11px] uppercase tracking-wide text-muted mb-3">
+            <p
+              className={`font-mech text-[11px] uppercase tracking-wide mb-3 ${
+                currentSlide.narrative_phase === "CLIMAX" ? "" : "text-muted"
+              }`}
+              style={
+                currentSlide.narrative_phase === "CLIMAX"
+                  ? { color: getGenre(genre).climaxBorder }
+                  : undefined
+              }
+            >
               {currentSlide.narrative_phase}
             </p>
-            <p className="font-display text-[19px] leading-relaxed">
+            <p
+              key={currentSlide.slide_number}
+              className="font-display text-[17px] sm:text-[19px] leading-relaxed"
+              style={{ animation: "decastory-prose-in 300ms ease-out both" }}
+            >
               {hasHiddenWords && !revealed ? maskProse(currentSlide.prose, currentSlide.redacted_words) : currentSlide.prose}
             </p>
             {hasHiddenWords && !revealed && (
@@ -531,10 +550,13 @@ export default function GuestPlay() {
 
             {isComplete && (
               <div className="mt-8 border-t border-surface2 pt-6">
-                <p className={`font-mech text-xs uppercase tracking-wide mb-2 ${died ? "text-rust" : "text-cocoa"}`}>
+                <p
+                  className={`font-display text-4xl mb-1 ${died ? "text-rust" : ""}`}
+                  style={!died ? { color: getGenre(genre).climaxBorder } : undefined}
+                >
                   {died ? "☠ You Died" : "Story Complete"}
                 </p>
-                {storyTitle && <p className="font-display text-lg mb-4">{storyTitle}</p>}
+                {storyTitle && <p className="font-display text-lg mb-4 text-muted">{storyTitle}</p>}
 
                 <div className="rounded-xl border-2 border-surface2 bg-surface2/40 px-4 py-3 mb-6">
                   {feedbackSaved ? (

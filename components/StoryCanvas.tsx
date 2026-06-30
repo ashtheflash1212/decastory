@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { KarmaVector, SlideRecord, StoryRecord } from "@/lib/types";
+import { getGenre } from "@/lib/genres";
 import { maskProse } from "@/lib/maskText";
 import ProgressRibbon from "./ProgressRibbon";
 import ChoiceCard from "./ChoiceCard";
@@ -55,6 +56,7 @@ export default function StoryCanvas({
   const isBusy = loading || cooldown > 0;
   const hasHiddenWords = !!currentSlide.redacted_words?.length;
   const isAction = story.genre === "action";
+  const genreColor = getGenre(story.genre).climaxBorder;
   const showIntro =
     !introDismissed &&
     !!story.intro_text &&
@@ -205,10 +207,27 @@ export default function StoryCanvas({
           <ProgressRibbon current={currentSlide.slide_number} total={story.slide_budget} />
 
       <div className="px-6 py-8">
-        <p className="font-mech text-[11px] uppercase tracking-wide text-muted mb-3">
+        <p
+          className={`font-mech text-[11px] uppercase tracking-wide mb-3 ${
+            currentSlide.narrative_phase === "CLIMAX"
+              ? ""
+              : "text-muted"
+          }`}
+          style={
+            currentSlide.narrative_phase === "CLIMAX"
+              ? { color: genreColor }
+              : undefined
+          }
+        >
           {currentSlide.narrative_phase}
         </p>
-        <p className="font-display text-[19px] leading-relaxed">{displayedProse}</p>
+        <p
+          key={currentSlide.id}
+          className="font-display text-[17px] sm:text-[19px] leading-relaxed"
+          style={{ animation: "decastory-prose-in 300ms ease-out both" }}
+        >
+          {displayedProse}
+        </p>
         {hasHiddenWords && !revealed && (
           <p className="font-mech text-[11px] uppercase tracking-wide text-rust mt-2">
             ▓ something's missing — choose anyway
@@ -263,9 +282,10 @@ export default function StoryCanvas({
         {isComplete && (
           <div className="mt-8 border-t border-surface2 pt-6">
             <p
-              className={`font-mech text-xs uppercase tracking-wide mb-3 ${
-                story.status === "failed" ? "text-rust" : "text-cocoa"
+              className={`font-display text-4xl mb-1 ${
+                story.status === "failed" ? "text-rust" : ""
               }`}
+              style={story.status !== "failed" ? { color: genreColor } : undefined}
             >
               {story.status === "failed" ? "☠ You Died" : "Story Complete"}
             </p>

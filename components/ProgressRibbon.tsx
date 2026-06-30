@@ -7,6 +7,7 @@ export default function ProgressRibbon({ current, total }: { current: number; to
       <div className="flex gap-1">
         {segments.map((n) => {
           const passed = n <= current;
+          const isActive = n === current;
           const isBoundary = n === climaxBoundary;
           return (
             <div
@@ -14,6 +15,7 @@ export default function ProgressRibbon({ current, total }: { current: number; to
               className={`h-1.5 flex-1 rounded-sm ${
                 passed ? "gauge-tick--passed" : isBoundary ? "gauge-tick--boundary" : "gauge-tick"
               }`}
+              style={isActive ? { animation: "decastory-pulse 1.5s ease-in-out infinite" } : undefined}
               title={`Slide ${n}${isBoundary ? " — climax threshold" : ""}`}
             />
           );

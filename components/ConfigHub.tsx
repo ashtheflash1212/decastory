@@ -15,6 +15,7 @@ export default function ConfigHub({
 }) {
   const router = useRouter();
   const [genre, setGenre] = useState(GENRES[0].id);
+  const [hoveredGenre, setHoveredGenre] = useState<string | null>(null);
   const [rating, setRating] = useState<"G" | "PG" | "R">("PG");
   const [budget, setBudget] = useState<5 | 10 | 20>(5);
   const [proseLength, setProseLength] = useState<"concise" | "standard">("standard");
@@ -102,7 +103,12 @@ export default function ConfigHub({
             <button
               key={g.id}
               onClick={() => setGenre(g.id)}
-              style={{ backgroundColor: g.cardBg }}
+              onMouseEnter={() => setHoveredGenre(g.id)}
+              onMouseLeave={() => setHoveredGenre(null)}
+              style={{
+                backgroundColor: g.cardBg,
+                boxShadow: hoveredGenre === g.id ? `0 0 0 3px ${g.cardBg}, 0 4px 16px ${g.cardBg}88` : undefined,
+              }}
               className={`relative text-left rounded-xl border-2 px-4 py-4 sm:px-5 sm:py-6 transition-all duration-200 hover:scale-[1.03] hover:shadow-md ${
                 genre === g.id ? "border-brass" : "border-surface2 hover:border-sage"
               }`}

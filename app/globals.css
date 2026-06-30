@@ -35,12 +35,32 @@ body {
 }
 
 @keyframes decastory-countdown {
-  from {
-    width: 100%;
-  }
-  to {
-    width: 0%;
-  }
+  from { width: 100%; }
+  to   { width: 0%;   }
+}
+
+/* Page-level fade-in — applies to every <main> so navigating
+   between routes feels like a reveal rather than an instant cut. */
+@keyframes decastory-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* Prose fade-in — applies per-slide so new story content feels
+   revealed rather than snapped into existence. */
+@keyframes decastory-prose-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* Active tick pulse — draws the eye to where you are in the story. */
+@keyframes decastory-pulse {
+  0%, 100% { opacity: 1;    }
+  50%       { opacity: 0.5; }
+}
+
+main {
+  animation: decastory-fadein 200ms ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
