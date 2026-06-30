@@ -44,6 +44,7 @@ export default function StoryCanvas({
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [feedbackSaved, setFeedbackSaved] = useState(!!story.feedback_rating);
+  const [feedbackError, setFeedbackError] = useState(false);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -170,6 +171,7 @@ export default function StoryCanvas({
   async function submitFeedback(rating: "up" | "down", comment: string) {
     setFeedbackRating(rating);
     setSubmittingFeedback(true);
+    setFeedbackError(false);
     try {
       const res = await fetch(`/api/stories/${story.id}/feedback`, {
         method: "POST",
@@ -180,7 +182,7 @@ export default function StoryCanvas({
       setFeedbackSaved(true);
       setShowCommentBox(false);
     } catch {
-      // non-critical — don't block the player over a feedback save failing
+      setFeedbackError(true);
     } finally {
       setSubmittingFeedback(false);
     }
@@ -344,6 +346,9 @@ export default function StoryCanvas({
                       >
                         {submittingFeedback ? "Saving…" : "Submit"}
                       </button>
+                      {feedbackError && (
+                        <p className="text-rust text-xs mt-1">Couldn't save — try again.</p>
+                      )}
                     </div>
                   )}
                 </>

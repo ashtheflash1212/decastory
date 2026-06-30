@@ -74,6 +74,7 @@ export default function GuestPlay() {
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [feedbackSaved, setFeedbackSaved] = useState(false);
+  const [feedbackError, setFeedbackError] = useState(false);
   const [timerKey, setTimerKey] = useState(0);
   const actionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -224,6 +225,7 @@ export default function GuestPlay() {
   async function submitFeedback(rating: "up" | "down", comment: string) {
     setFeedbackRating(rating);
     setSubmittingFeedback(true);
+    setFeedbackError(false);
     try {
       const res = await fetch("/api/guest/feedback", {
         method: "POST",
@@ -240,7 +242,7 @@ export default function GuestPlay() {
       setFeedbackSaved(true);
       setShowCommentBox(false);
     } catch {
-      // non-critical — don't block the player over a feedback save failing
+      setFeedbackError(true);
     } finally {
       setSubmittingFeedback(false);
     }
@@ -609,6 +611,9 @@ export default function GuestPlay() {
                           >
                             {submittingFeedback ? "Saving…" : "Submit"}
                           </button>
+                          {feedbackError && (
+                            <p className="text-rust text-xs mt-1">Couldn't save — try again.</p>
+                          )}
                         </div>
                       )}
                     </>
