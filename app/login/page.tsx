@@ -89,6 +89,10 @@ export default function LoginPage() {
           >
             Continue as guest — no account, nothing saved
           </Link>
+          <div className="flex gap-4 mt-4">
+            <Link href="/privacy" className="text-xs text-muted hover:underline">Privacy Policy</Link>
+            <Link href="/terms" className="text-xs text-muted hover:underline">Terms of Service</Link>
+          </div>
         </div>
       </div>
     </main>
