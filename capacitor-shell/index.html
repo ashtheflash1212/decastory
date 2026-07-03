@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>DecaStory</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #BFD8EC;
+      font-family: -apple-system, "Helvetica Neue", sans-serif;
+      color: #2b2b2b;
+      text-align: center;
+      padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom);
+    }
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    p { color: #55606b; margin-bottom: 24px; }
+    button {
+      background: #2b2b2b;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 28px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>DecaStory</h1>
+    <p>You appear to be offline.<br />Reconnect to continue your story.</p>
+    <button onclick="window.location.href='https://decastory.vercel.app'">Retry</button>
+  </div>
+</body>
+</html>

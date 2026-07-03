@@ -24,6 +24,21 @@ export default function TopNav({ email }: { email: string }) {
     router.refresh();
   }
 
+  async function deleteAccount() {
+    const confirmed = window.confirm(
+      "Permanently delete your account? All your stories, timelines, and stats will be erased. This cannot be undone."
+    );
+    if (!confirmed) return;
+    const res = await fetch("/api/account", { method: "DELETE" });
+    if (!res.ok) {
+      alert("Could not delete your account. Please try again.");
+      return;
+    }
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
   return (
     <nav className="sticky top-0 z-50 border-b border-surface2" style={{ backgroundColor: "#BFD8EC" }}>
       <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
@@ -48,6 +63,13 @@ export default function TopNav({ email }: { email: string }) {
             className="px-3 py-1.5 rounded-md text-muted transition-colors hover:bg-white/40 hover:text-rust"
           >
             Sign out
+          </button>
+          <button
+            onClick={deleteAccount}
+            className="px-3 py-1.5 rounded-md text-xs text-muted/70 transition-colors hover:bg-white/40 hover:text-rust"
+            title="Permanently delete your account and all data"
+          >
+            Delete account
           </button>
         </div>
 
@@ -80,6 +102,12 @@ export default function TopNav({ email }: { email: string }) {
             className="block w-full text-left px-3 py-2.5 rounded-md text-sm text-muted transition-colors hover:bg-white/40 hover:text-rust"
           >
             Sign out
+          </button>
+          <button
+            onClick={deleteAccount}
+            className="block w-full text-left px-3 py-2.5 rounded-md text-xs text-muted/70 transition-colors hover:bg-white/40 hover:text-rust"
+          >
+            Delete account
           </button>
         </div>
       )}
