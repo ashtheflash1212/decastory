@@ -72,9 +72,22 @@ main {
 
 /* Native app (Capacitor iOS shell) — respect the notch / home indicator.
    .native-app is added by components/NativeBridge.tsx only inside the app. */
-.native-app body {
+/* No global body padding — that made every page scrollable and added a
+   dead band up top. Instead the sticky nav bars absorb the status-bar
+   inset themselves, so they sit flush at the physical top of the phone
+   and their background fills the area behind the clock/battery. */
+.native-app nav.sticky {
   padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+}
+/* Static-page navs (privacy, terms, how-it-works, shared) carry their own
+   py-4 on the <nav> itself — preserve it on top of the inset. */
+.native-app nav.sticky.py-4 {
+  padding-top: calc(env(safe-area-inset-top) + 1rem);
+}
+
+/* Kill the iOS rubber-band bounce inside the app so overscrolling
+   never reveals empty space past the edges of the page. */
+.native-app,
+.native-app body {
+  overscroll-behavior-y: none;
 }

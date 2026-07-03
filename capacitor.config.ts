@@ -12,7 +12,9 @@ const config: CapacitorConfig = {
     errorPath: "index.html",
   },
   ios: {
-    contentInset: "automatic",
+    // "never" = webview runs edge-to-edge behind the status bar;
+    // the site handles the notch itself via env(safe-area-inset-*).
+    contentInset: "never",
     backgroundColor: "#BFD8EC",
   },
 };
