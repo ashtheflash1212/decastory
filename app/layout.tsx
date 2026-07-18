@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Alice, Nunito, Inter } from "next/font/google";
 import "./globals.css";
+import NativeBridge from "@/components/NativeBridge";
 
 const display = Alice({ subsets: ["latin"], variable: "--font-display", weight: ["400"] });
 const mech = Nunito({ subsets: ["latin"], variable: "--font-mech", weight: ["500", "600", "700"] });
@@ -34,14 +35,19 @@ export const metadata: Metadata = {
   },
 };
 
+// viewportFit "cover" is REQUIRED for the iOS app: without it the
+// webview reports safe-area insets as 0 and the nav bar collides
+// with the status bar. Don't remove it when editing metadata.
 export const viewport = {
   themeColor: "#BFD8EC",
+  viewportFit: "cover" as const,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={`${display.variable} ${mech.variable} ${body.variable} bg-parchment text-ink font-body`}>
+        <NativeBridge />
         {children}
       </body>
     </html>
