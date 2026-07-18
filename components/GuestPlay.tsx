@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { GENRES, getGenre } from "@/lib/genres";
 import { Choice, KarmaVector } from "@/lib/types";
-import { maskProse } from "@/lib/maskText";
+import MaskedProse from "./MaskedProse";
 import { getOrCreateGuestId } from "@/lib/guestId";
 import ProgressRibbon from "./ProgressRibbon";
 import ChoiceCard from "./ChoiceCard";
@@ -497,11 +497,16 @@ export default function GuestPlay() {
               className="font-display text-[17px] sm:text-[19px] leading-relaxed"
               style={{ animation: "decastory-prose-in 300ms ease-out both" }}
             >
-              {hasHiddenWords && !revealed ? maskProse(currentSlide.prose, currentSlide.redacted_words) : currentSlide.prose}
+              <MaskedProse
+                prose={currentSlide.prose}
+                redactedWords={currentSlide.redacted_words}
+                revealed={!hasHiddenWords || revealed}
+              />
+
             </p>
             {hasHiddenWords && !revealed && (
               <p className="font-mech text-[11px] uppercase tracking-wide text-rust mt-2">
-                ▓ something's missing — choose anyway
+                something's missing — choose anyway
               </p>
             )}
             {hasHiddenWords && revealed && loading && (

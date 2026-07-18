@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { KarmaVector, SlideRecord, StoryRecord } from "@/lib/types";
 import { getGenre } from "@/lib/genres";
-import { maskProse } from "@/lib/maskText";
+import MaskedProse from "./MaskedProse";
 import ProgressRibbon from "./ProgressRibbon";
 import ChoiceCard from "./ChoiceCard";
 
@@ -188,8 +188,6 @@ export default function StoryCanvas({
     }
   }
 
-  const displayedProse =
-    hasHiddenWords && !revealed ? maskProse(currentSlide.prose, currentSlide.redacted_words) : currentSlide.prose;
 
   return (
     <div className="max-w-xl mx-auto">
@@ -228,11 +226,15 @@ export default function StoryCanvas({
           className="font-display text-[17px] sm:text-[19px] leading-relaxed"
           style={{ animation: "decastory-prose-in 300ms ease-out both" }}
         >
-          {displayedProse}
+          <MaskedProse
+            prose={currentSlide.prose}
+            redactedWords={currentSlide.redacted_words}
+            revealed={!hasHiddenWords || revealed}
+          />
         </p>
         {hasHiddenWords && !revealed && (
           <p className="font-mech text-[11px] uppercase tracking-wide text-rust mt-2">
-            ▓ something's missing — choose anyway
+            something's missing — choose anyway
           </p>
         )}
         {hasHiddenWords && revealed && loading && (
